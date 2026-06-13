@@ -19,6 +19,8 @@ class HiveLocalDataSource {
   late Box<UserProfileModel> _userBox;
   // Streak ve sayaç gibi basit primitifler için genel kutu.
   late Box<dynamic> _streakBox;
+  // İbadet modülleri için genel kutu (Oruç/Hatim/Zikir/Sadaka).
+  late Box<dynamic> _ibadetBox;
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -45,7 +47,15 @@ class HiveLocalDataSource {
     _planBox = await Hive.openBox<PrayerPlanModel>(AppConstants.hiveBoxPlan);
     _userBox = await Hive.openBox<UserProfileModel>(AppConstants.hiveBoxUser);
     _streakBox = await Hive.openBox(AppConstants.hiveBoxStreak);
+    _ibadetBox = await Hive.openBox(AppConstants.hiveBoxIbadet);
   }
+
+  // ── İbadet modülleri (genel anahtar/değer deposu) ───────────────────────────
+
+  dynamic getIbadet(String key) => _ibadetBox.get(key);
+
+  Future<void> putIbadet(String key, dynamic value) =>
+      _ibadetBox.put(key, value);
 
   // ── KazaMetrics ─────────────────────────────────────────────────────────────
 

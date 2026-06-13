@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kaza_takip/data/datasources/local/hive_datasource.dart';
+import 'package:kaza_takip/data/datasources/local/ibadet_service.dart';
 import 'package:kaza_takip/data/datasources/remote/firestore_datasource.dart';
 import 'package:kaza_takip/data/repositories/kaza_repository_impl.dart';
 import 'package:kaza_takip/data/repositories/user_repository_impl.dart';
@@ -24,6 +25,8 @@ Future<void> initDependencies() async {
   sl.registerSingleton<HiveLocalDataSource>(hive);
 
   sl.registerSingleton<FirestoreDataSource>(FirestoreDataSource());
+
+  sl.registerSingleton<IbadetService>(IbadetService(hive));
 
   final prefs = await SharedPreferences.getInstance();
   sl.registerSingleton<SharedPreferences>(prefs);

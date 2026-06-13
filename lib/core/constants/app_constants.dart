@@ -12,6 +12,9 @@ class AppConstants {
   static const String hiveBoxDailyLog = 'daily_log_box';
   static const String hiveBoxUserPlan = 'user_plan_box';
 
+  // İbadet modülleri (Oruç / Hatim / Zikir / Sadaka)
+  static const String hiveBoxIbadet = 'ibadet_box';
+
   // Firestore collections
   static const String colUsers = 'users';
   static const String colKazaDebts = 'kaza_debts';

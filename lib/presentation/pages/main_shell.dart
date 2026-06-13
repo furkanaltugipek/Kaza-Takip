@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kaza_takip/core/theme/app_colors.dart';
+import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
+import 'package:kaza_takip/presentation/pages/calendar/calendar_page.dart';
 import 'package:kaza_takip/presentation/pages/dashboard/dashboard_v2_page.dart';
+import 'package:kaza_takip/presentation/pages/ibadet/ibadet_center_page.dart';
+import 'package:kaza_takip/presentation/pages/profile/profile_page.dart';
 import 'package:kaza_takip/presentation/pages/simulator/simulator_page.dart';
 
 /// Uygulamanın ana çerçevesi — alt gezinti çubuğu + sekmeler.
+///
+/// Uygulama yaşam döngüsü değiştiğinde (paused/detached) biriken yerel
+/// değişiklikleri Firestore'a batch olarak senkronize eder.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -12,20 +19,53 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _tab = 0;
+
+  static const _pages = [
+    DashboardV2Page(),
+    CalendarPage(),
+    IbadetCenterPage(),
+    SimulatorPage(),
+    ProfilePage(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState ls) {
+    // Uygulama arka plana geçince tek batch ile buluta senkronize et.
+    if (ls == AppLifecycleState.paused || ls == AppLifecycleState.detached) {
+      final bloc = context.read<KazaBloc>();
+      if (bloc.state is KazaLoaded) {
+        bloc.add(const SyncDataWithCloud());
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _tab,
-        children: const [
-          DashboardV2Page(),
-          SimulatorPage(),
-          _PlaceholderPage(label: 'Takvim', icon: Icons.grid_view_rounded),
-          _PlaceholderPage(label: 'Ayarlar', icon: Icons.settings_outlined),
-        ],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(
+          key: ValueKey(_tab),
+          child: _pages[_tab],
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -39,6 +79,8 @@ class _MainShellState extends State<MainShell> {
           unselectedItemColor: const Color(0xFF9E9E9E),
           backgroundColor: AppColors.surface,
           elevation: 0,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
@@ -46,44 +88,25 @@ class _MainShellState extends State<MainShell> {
               label: 'Bugün',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.show_chart_outlined),
-              activeIcon: Icon(Icons.show_chart),
-              label: 'Simülatör',
-            ),
-            BottomNavigationBarItem(
               icon: Icon(Icons.grid_view_outlined),
               activeIcon: Icon(Icons.grid_view),
               label: 'Takvim',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Ayarlar',
+              icon: Icon(Icons.mosque_outlined),
+              activeIcon: Icon(Icons.mosque),
+              label: 'İbadet',
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaceholderPage extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _PlaceholderPage({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(label)),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text('$label — yakında',
-                style: Theme.of(context).textTheme.titleLarge),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.show_chart_outlined),
+              activeIcon: Icon(Icons.show_chart),
+              label: 'Simülatör',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profil',
+            ),
           ],
         ),
       ),
