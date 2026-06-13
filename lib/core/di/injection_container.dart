@@ -13,6 +13,7 @@ import 'package:kaza_takip/domain/usecases/get_today_plan.dart';
 import 'package:kaza_takip/presentation/bloc/dashboard/dashboard_bloc.dart';
 import 'package:kaza_takip/presentation/bloc/kaza_calculator/kaza_calculator_bloc.dart';
 import 'package:kaza_takip/presentation/bloc/simulator/simulator_bloc.dart';
+import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -54,4 +55,10 @@ Future<void> initDependencies() async {
         getStreak: sl(),
       ));
   sl.registerFactory(() => SimulatorBloc());
+
+  // ── Yeni birleşik KazaBloc ────────────────────────────────────────────────
+  sl.registerFactory(() => KazaBloc(
+        kazaRepository: sl(),
+        userRepository: sl(),
+      ));
 }

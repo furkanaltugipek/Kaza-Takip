@@ -52,6 +52,11 @@ class KazaMetrics extends Equatable {
     return (total - done).clamp(0, 1 << 31);
   }
 
+  /// Tüm vakit için kalan borç haritası (PrayerCalculator.estimateCompletionDate ile uyumlu).
+  Map<String, int> get remainingDebts => {
+        for (final k in totalDebts.keys) k: remainingFor(k),
+      };
+
   /// Completion ratio in the range 0.0–1.0.
   double get completionPercentage {
     if (totalDebtCount == 0) return 0;
