@@ -171,12 +171,9 @@ class _ModeComparison extends StatelessWidget {
         Text('Mod Karşılaştırması', style: AppTextStyles.titleLarge),
         const SizedBox(height: 12),
         ...modes.map((m) {
-          final targets = {
-            for (final k in debt.remainingCounts.keys) k: m.$2
-          };
           final date = PrayerCalculator.estimateCompletionDate(
-            kazaCounts: debt.remainingCounts,
-            dailyTargets: targets,
+            remaining: debt.remainingCounts,
+            dailyTargetPerVakit: m.$2,
           );
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
