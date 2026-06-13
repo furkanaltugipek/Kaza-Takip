@@ -3,7 +3,7 @@ import 'package:kaza_takip/domain/entities/kaza_debt.dart';
 
 part 'kaza_debt_model.g.dart';
 
-@HiveType(typeId: 0)
+@HiveType(typeId: 10)
 class KazaDebtModel extends HiveObject {
   @HiveField(0) String id;
   @HiveField(1) String userId;

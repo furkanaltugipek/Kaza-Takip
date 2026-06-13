@@ -7,6 +7,11 @@ class AppConstants {
   static const String hiveBoxPlan = 'plan_box';
   static const String hiveBoxStreak = 'streak_box';
 
+  // Yeni veri katmanı kutuları (KazaMetrics / DailyLog / UserPlan)
+  static const String hiveBoxMetrics = 'metrics_box';
+  static const String hiveBoxDailyLog = 'daily_log_box';
+  static const String hiveBoxUserPlan = 'user_plan_box';
+
   // Firestore collections
   static const String colUsers = 'users';
   static const String colKazaDebts = 'kaza_debts';

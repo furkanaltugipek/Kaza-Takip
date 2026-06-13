@@ -5,7 +5,7 @@ part of 'kaza_debt_model.dart';
 
 class KazaDebtModelAdapter extends TypeAdapter<KazaDebtModel> {
   @override
-  final int typeId = 0;
+  final int typeId = 10;
 
   @override
   KazaDebtModel read(BinaryReader reader) {

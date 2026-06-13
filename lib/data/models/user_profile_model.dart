@@ -3,7 +3,7 @@ import 'package:kaza_takip/domain/entities/user_profile.dart';
 
 part 'user_profile_model.g.dart';
 
-@HiveType(typeId: 3)
+@HiveType(typeId: 13)
 class UserProfileModel extends HiveObject {
   @HiveField(0) String id;
   @HiveField(1) String? displayName;

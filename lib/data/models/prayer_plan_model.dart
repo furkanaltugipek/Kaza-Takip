@@ -3,7 +3,7 @@ import 'package:kaza_takip/domain/entities/prayer_plan.dart';
 
 part 'prayer_plan_model.g.dart';
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 11)
 class PrayerSlotModel extends HiveObject {
   @HiveField(0) String slotId;
   @HiveField(1) String prayerKey;
@@ -36,7 +36,7 @@ class PrayerSlotModel extends HiveObject {
       );
 }
 
-@HiveType(typeId: 2)
+@HiveType(typeId: 12)
 class PrayerPlanModel extends HiveObject {
   @HiveField(0) String id;
   @HiveField(1) String userId;

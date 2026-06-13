@@ -1,28 +1,84 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kaza_takip/core/constants/app_constants.dart';
+import 'package:kaza_takip/data/models/daily_log_model.dart';
 import 'package:kaza_takip/data/models/kaza_debt_model.dart';
+import 'package:kaza_takip/data/models/kaza_metrics_model.dart';
 import 'package:kaza_takip/data/models/prayer_plan_model.dart';
+import 'package:kaza_takip/data/models/user_plan_model.dart';
 import 'package:kaza_takip/data/models/user_profile_model.dart';
 
 class HiveLocalDataSource {
+  // Yeni veri katmanı kutuları
+  late Box<KazaMetricsModel> _metricsBox;
+  late Box<DailyLogModel> _dailyLogBox;
+  late Box<UserPlanModel> _userPlanBox;
+
+  // Eski (geriye dönük) kutular
   late Box<KazaDebtModel> _kazaBox;
   late Box<PrayerPlanModel> _planBox;
   late Box<UserProfileModel> _userBox;
-  // Streak stored as simple primitives in a generic box.
+  // Streak ve sayaç gibi basit primitifler için genel kutu.
   late Box<dynamic> _streakBox;
 
   Future<void> init() async {
     await Hive.initFlutter();
+
+    // Yeni adapter'lar (typeId 0,1,2)
+    Hive.registerAdapter(KazaMetricsModelAdapter());
+    Hive.registerAdapter(DailyLogModelAdapter());
+    Hive.registerAdapter(UserPlanModelAdapter());
+
+    // Eski adapter'lar (typeId 10,11,12,13)
     Hive.registerAdapter(KazaDebtModelAdapter());
     Hive.registerAdapter(PrayerSlotModelAdapter());
     Hive.registerAdapter(PrayerPlanModelAdapter());
     Hive.registerAdapter(UserProfileModelAdapter());
+
+    _metricsBox =
+        await Hive.openBox<KazaMetricsModel>(AppConstants.hiveBoxMetrics);
+    _dailyLogBox =
+        await Hive.openBox<DailyLogModel>(AppConstants.hiveBoxDailyLog);
+    _userPlanBox =
+        await Hive.openBox<UserPlanModel>(AppConstants.hiveBoxUserPlan);
 
     _kazaBox = await Hive.openBox<KazaDebtModel>(AppConstants.hiveBoxKaza);
     _planBox = await Hive.openBox<PrayerPlanModel>(AppConstants.hiveBoxPlan);
     _userBox = await Hive.openBox<UserProfileModel>(AppConstants.hiveBoxUser);
     _streakBox = await Hive.openBox(AppConstants.hiveBoxStreak);
   }
+
+  // ── KazaMetrics ─────────────────────────────────────────────────────────────
+
+  KazaMetricsModel? getMetrics(String userId) => _metricsBox.get(userId);
+
+  Future<void> saveMetrics(String userId, KazaMetricsModel model) =>
+      _metricsBox.put(userId, model);
+
+  // ── DailyLog ────────────────────────────────────────────────────────────────
+
+  /// Anahtar formatı: '<userId>_<yyyy-MM-dd>'
+  Future<void> saveDailyLog(String key, DailyLogModel model) =>
+      _dailyLogBox.put(key, model);
+
+  DailyLogModel? getDailyLog(String key) => _dailyLogBox.get(key);
+
+  /// Anahtarı '<userId>_' ile başlayan tüm günlük kayıtları döndürür.
+  List<DailyLogModel> getDailyLogsForUser(String userId) {
+    final prefix = '${userId}_';
+    return _dailyLogBox.keys
+        .whereType<String>()
+        .where((k) => k.startsWith(prefix))
+        .map((k) => _dailyLogBox.get(k))
+        .whereType<DailyLogModel>()
+        .toList();
+  }
+
+  // ── UserPlan ────────────────────────────────────────────────────────────────
+
+  UserPlanModel? getUserPlan(String userId) => _userPlanBox.get(userId);
+
+  Future<void> saveUserPlan(String userId, UserPlanModel model) =>
+      _userPlanBox.put(userId, model);
 
   // ── KazaDebt ──────────────────────────────────────────────────────────────
 
