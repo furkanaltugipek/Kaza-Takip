@@ -43,6 +43,12 @@ dependencies:
   shared_preferences: ^2.3.3
   json_annotation: ^4.9.0
 
+  # Bildirimler & Namaz Vakti
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
+  adhan: ^2.0.0+1
+  geolocator: ^13.0.1
+
   # Icons
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.0.10+1

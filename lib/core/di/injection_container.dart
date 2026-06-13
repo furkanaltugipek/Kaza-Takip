@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kaza_takip/core/services/notification_service.dart';
 import 'package:kaza_takip/data/datasources/local/hive_datasource.dart';
 import 'package:kaza_takip/data/datasources/local/ibadet_service.dart';
 import 'package:kaza_takip/data/datasources/remote/firestore_datasource.dart';
@@ -30,6 +31,16 @@ Future<void> initDependencies() async {
 
   final prefs = await SharedPreferences.getInstance();
   sl.registerSingleton<SharedPreferences>(prefs);
+
+  // Namaz vakti hatırlatıcı servisi
+  final notificationService = NotificationService(prefs);
+  await notificationService.init();
+  sl.registerSingleton<NotificationService>(notificationService);
+  // Açıksa, açılışta önümüzdeki günlerin vakitlerini yeniden planla.
+  if (notificationService.isEnabled) {
+    // Beklemeden arka planda planla — açılışı yavaşlatma.
+    notificationService.rescheduleAll();
+  }
 
   // ── Repositories ──────────────────────────────────────────────────────────
   sl.registerLazySingleton<KazaRepository>(() => KazaRepositoryImpl(

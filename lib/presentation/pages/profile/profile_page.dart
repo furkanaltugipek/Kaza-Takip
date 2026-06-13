@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaza_takip/core/di/injection_container.dart';
+import 'package:kaza_takip/core/services/notification_service.dart';
 import 'package:kaza_takip/core/theme/app_colors.dart';
 import 'package:kaza_takip/core/theme/app_text_styles.dart';
 import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
@@ -56,6 +58,8 @@ class ProfilePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
+              const _NotificationTile(),
+
               _SettingsTile(
                 icon: Icons.calculate_outlined,
                 title: 'Kaza Borcunu Yeniden Hesapla',
@@ -98,6 +102,69 @@ class ProfilePage extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Namaz vakti hatırlatıcı aç/kapa anahtarı.
+class _NotificationTile extends StatefulWidget {
+  const _NotificationTile();
+
+  @override
+  State<_NotificationTile> createState() => _NotificationTileState();
+}
+
+class _NotificationTileState extends State<_NotificationTile> {
+  final NotificationService _svc = sl<NotificationService>();
+  late bool _enabled = _svc.isEnabled;
+  bool _busy = false;
+
+  Future<void> _toggle(bool value) async {
+    setState(() => _busy = true);
+    if (value) {
+      final ok = await _svc.enable();
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Bildirim izni verilmedi. Ayarlardan etkinleştirebilirsiniz.'),
+          ),
+        );
+      }
+      setState(() => _enabled = _svc.isEnabled);
+    } else {
+      await _svc.disable();
+      setState(() => _enabled = false);
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: SwitchListTile(
+        secondary: const Icon(Icons.notifications_active_outlined,
+            color: AppColors.primary),
+        activeColor: AppColors.primary,
+        title: Text('Namaz Vakti Hatırlatıcısı',
+            style: AppTextStyles.titleMedium),
+        subtitle: Text(
+          _busy
+              ? 'Ayarlanıyor...'
+              : (_enabled
+                  ? 'Her vakitte kaza namazı hatırlatılır'
+                  : 'Kapalı'),
+          style: AppTextStyles.bodySmall,
+        ),
+        value: _enabled,
+        onChanged: _busy ? null : _toggle,
       ),
     );
   }

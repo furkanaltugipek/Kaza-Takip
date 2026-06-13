@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kaza_takip/core/di/injection_container.dart';
+import 'package:kaza_takip/core/services/notification_service.dart';
 import 'package:kaza_takip/core/theme/app_colors.dart';
 import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
 import 'package:kaza_takip/presentation/pages/calendar/calendar_page.dart';
@@ -50,6 +52,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       if (bloc.state is KazaLoaded) {
         bloc.add(const SyncDataWithCloud());
       }
+    }
+    // Öne gelince namaz vakti hatırlatıcılarını tazele (vakitler her gün değişir).
+    if (ls == AppLifecycleState.resumed) {
+      final notif = sl<NotificationService>();
+      if (notif.isEnabled) notif.rescheduleAll();
     }
   }
 

@@ -15,6 +15,15 @@ class AppConstants {
   // İbadet modülleri (Oruç / Hatim / Zikir / Sadaka)
   static const String hiveBoxIbadet = 'ibadet_box';
 
+  // Bildirim tercihleri (SharedPreferences anahtarları)
+  static const String prefNotificationsEnabled = 'notifications_enabled';
+  static const String prefLatitude = 'pref_latitude';
+  static const String prefLongitude = 'pref_longitude';
+
+  // Varsayılan konum: İstanbul (konum izni yoksa kullanılır)
+  static const double defaultLatitude = 41.0082;
+  static const double defaultLongitude = 28.9784;
+
   // Firestore collections
   static const String colUsers = 'users';
   static const String colKazaDebts = 'kaza_debts';
