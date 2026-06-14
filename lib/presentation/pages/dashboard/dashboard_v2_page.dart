@@ -9,6 +9,7 @@ import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
 import 'package:kaza_takip/presentation/pages/wizard/wizard_page.dart';
 import 'package:kaza_takip/presentation/widgets/common/kaza_progress_bar.dart';
 import 'package:kaza_takip/presentation/widgets/common/streak_card.dart';
+import 'package:kaza_takip/presentation/widgets/daily_inspiration_card.dart';
 import 'package:kaza_takip/presentation/widgets/daily_prayer_tile.dart';
 
 /// Bugünkü Plan — ana dashboard ekranı.
@@ -207,6 +208,10 @@ class _LoadedDashboardState extends State<_LoadedDashboard>
                 longestStreak: metrics.longestStreak,
                 totalCompleted: metrics.totalCompletedCount,
               ),
+              const SizedBox(height: 16),
+
+              // Günün İlhamı — Ayet / Hadis / Mevlana / Risale-i Nur
+              const DailyInspirationCard(),
               const SizedBox(height: 24),
 
               // Mod seçici
