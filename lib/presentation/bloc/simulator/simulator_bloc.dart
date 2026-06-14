@@ -26,14 +26,9 @@ class SimulatorBloc extends Bloc<SimulatorEvent, SimulatorState> {
 
   void _recalculate(Emitter<SimulatorState> emit) {
     if (state.kazaDebt == null) return;
-    // Same target for all prayer types
-    final targets = {
-      for (final k in state.kazaDebt!.remainingCounts.keys)
-        k: state.dailyTarget
-    };
     final completion = PrayerCalculator.estimateCompletionDate(
-      kazaCounts: state.kazaDebt!.remainingCounts,
-      dailyTargets: targets,
+      remaining: state.kazaDebt!.remainingCounts,
+      dailyTargetPerVakit: state.dailyTarget,
     );
     emit(state.copyWith(estimatedCompletionDate: completion));
   }

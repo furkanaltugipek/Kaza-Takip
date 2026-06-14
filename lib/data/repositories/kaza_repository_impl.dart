@@ -2,11 +2,17 @@ import 'package:kaza_takip/core/constants/app_constants.dart';
 import 'package:kaza_takip/core/utils/date_utils.dart';
 import 'package:kaza_takip/data/datasources/local/hive_datasource.dart';
 import 'package:kaza_takip/data/datasources/remote/firestore_datasource.dart';
+import 'package:kaza_takip/data/models/daily_log_model.dart';
 import 'package:kaza_takip/data/models/kaza_debt_model.dart';
+import 'package:kaza_takip/data/models/kaza_metrics_model.dart';
 import 'package:kaza_takip/data/models/prayer_plan_model.dart';
+import 'package:kaza_takip/data/models/user_plan_model.dart';
+import 'package:kaza_takip/domain/entities/daily_log.dart';
 import 'package:kaza_takip/domain/entities/kaza_debt.dart';
+import 'package:kaza_takip/domain/entities/kaza_metrics.dart';
 import 'package:kaza_takip/domain/entities/prayer_plan.dart';
 import 'package:kaza_takip/domain/entities/streak.dart';
+import 'package:kaza_takip/domain/entities/user_plan.dart';
 import 'package:kaza_takip/domain/repositories/kaza_repository.dart';
 
 class KazaRepositoryImpl implements KazaRepository {
@@ -14,6 +20,89 @@ class KazaRepositoryImpl implements KazaRepository {
   final FirestoreDataSource remote;
 
   KazaRepositoryImpl({required this.local, required this.remote});
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // YENİ VERİ KATMANI API'si — Offline-First + Batch Sync
+  // ══════════════════════════════════════════════════════════════════════════
+
+  @override
+  Future<KazaMetrics> getMetrics(String userId) async {
+    final model = local.getMetrics(userId);
+    return model?.toEntity() ?? KazaMetrics.empty();
+  }
+
+  @override
+  Future<void> saveMetrics(String userId, KazaMetrics metrics) async {
+    // SADECE Hive — anlık ve ücretsiz.
+    await local.saveMetrics(userId, KazaMetricsModel.fromEntity(metrics));
+    await local.incrementPendingSync(userId);
+  }
+
+  @override
+  Future<KazaMetrics> updateKazaProgress({
+    required String userId,
+    required String vakitKey,
+    int delta = 1,
+  }) async {
+    final current = await getMetrics(userId);
+    final completed = Map<String, int>.from(current.completedDebts);
+    final total = current.totalDebts[vakitKey] ?? 0;
+    final newValue = ((completed[vakitKey] ?? 0) + delta).clamp(0, total);
+    completed[vakitKey] = newValue;
+
+    final updated = current.copyWith(completedDebts: completed);
+
+    // SADECE Hive'a yaz; bulut senkronu syncWithCloud() ile.
+    await local.saveMetrics(userId, KazaMetricsModel.fromEntity(updated));
+    await local.incrementPendingSync(userId);
+    return updated;
+  }
+
+  @override
+  Future<void> saveDailyLog(String userId, DailyLog log) async {
+    final key = '${userId}_${AppDateUtils.toStorage(log.date)}';
+    await local.saveDailyLog(key, DailyLogModel.fromEntity(log));
+    await local.incrementPendingSync(userId);
+  }
+
+  @override
+  Future<List<DailyLog>> getDailyLogs(String userId, DateTime month) async {
+    final models = local.getDailyLogsForUser(userId);
+    return models
+        .where((m) => m.date.year == month.year && m.date.month == month.month)
+        .map((m) => m.toEntity())
+        .toList();
+  }
+
+  @override
+  Future<UserPlan?> getUserPlan(String userId) async =>
+      local.getUserPlan(userId)?.toEntity();
+
+  @override
+  Future<void> saveUserPlan(String userId, UserPlan plan) async {
+    await local.saveUserPlan(userId, UserPlanModel.fromEntity(plan));
+    await local.incrementPendingSync(userId);
+  }
+
+  @override
+  int pendingChanges(String userId) => local.getPendingSyncCount(userId);
+
+  @override
+  Future<void> syncWithCloud(String userId) async {
+    // Biriken TÜM yerel durumu TEK batch ile gönder.
+    final metrics = local.getMetrics(userId);
+    final plan = local.getUserPlan(userId);
+    final logs = local.getDailyLogsForUser(userId);
+
+    await remote.syncUserData(
+      userId: userId,
+      metrics: metrics,
+      plan: plan,
+      dailyLogs: logs,
+    );
+
+    await local.resetPendingSync(userId);
+  }
 
   @override
   Future<KazaDebt?> getKazaDebt(String userId) async {

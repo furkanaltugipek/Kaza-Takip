@@ -14,8 +14,8 @@ class KazaResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final debt = context.read<KazaCalculatorBloc>().state.result!;
-    final totalCount = PrayerCalculator.totalKazaCount(debt.remainingCounts);
-    final totalRakats = PrayerCalculator.totalRakatCount(debt.remainingCounts);
+    final totalCount = PrayerCalculator.totalCount(debt.remainingCounts);
+    final totalRakats = PrayerCalculator.totalRakats(debt.remainingCounts);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Hesap Sonucu')),

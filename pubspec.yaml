@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # State Management
   flutter_bloc: ^8.1.6
@@ -38,9 +40,17 @@ dependencies:
   injectable: ^2.4.4
 
   # Utils
-  intl: ^0.19.0
+  intl: ^0.20.2
   uuid: ^4.5.1
   shared_preferences: ^2.3.3
+  json_annotation: ^4.9.0
+
+  # Bildirimler & Namaz Vakti
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
+  adhan: ^2.0.0+1
+  geolocator: ^13.0.1
+  flutter_compass: ^0.8.1
 
   # Icons
   cupertino_icons: ^1.0.8
@@ -51,6 +61,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
   hive_generator: ^2.0.1
+  json_serializable: ^6.8.0
   build_runner: ^2.4.13
   injectable_generator: ^2.6.2
   bloc_test: ^9.1.7
@@ -62,13 +73,3 @@ flutter:
     - assets/images/
     - assets/animations/
     - assets/icons/
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-        - asset: assets/fonts/Poppins-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Poppins-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Poppins-Bold.ttf
-          weight: 700

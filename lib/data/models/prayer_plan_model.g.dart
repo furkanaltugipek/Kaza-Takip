@@ -4,7 +4,7 @@ part of 'prayer_plan_model.dart';
 
 class PrayerSlotModelAdapter extends TypeAdapter<PrayerSlotModel> {
   @override
-  final int typeId = 1;
+  final int typeId = 11;
 
   @override
   PrayerSlotModel read(BinaryReader reader) {
@@ -50,7 +50,7 @@ class PrayerSlotModelAdapter extends TypeAdapter<PrayerSlotModel> {
 
 class PrayerPlanModelAdapter extends TypeAdapter<PrayerPlanModel> {
   @override
-  final int typeId = 2;
+  final int typeId = 12;
 
   @override
   PrayerPlanModel read(BinaryReader reader) {

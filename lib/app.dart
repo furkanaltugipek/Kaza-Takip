@@ -4,10 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:kaza_takip/core/di/injection_container.dart';
 import 'package:kaza_takip/core/theme/app_theme.dart';
 import 'package:kaza_takip/domain/repositories/user_repository.dart';
-import 'package:kaza_takip/presentation/bloc/dashboard/dashboard_bloc.dart';
-import 'package:kaza_takip/presentation/bloc/kaza_calculator/kaza_calculator_bloc.dart';
-import 'package:kaza_takip/presentation/bloc/simulator/simulator_bloc.dart';
-import 'package:kaza_takip/presentation/pages/dashboard/dashboard_page.dart';
+import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
+import 'package:kaza_takip/presentation/pages/main_shell.dart';
 
 class KazaTakipApp extends StatefulWidget {
   const KazaTakipApp({super.key});
@@ -33,23 +31,18 @@ class _KazaTakipAppState extends State<KazaTakipApp> {
         if (!snap.hasData) {
           return const MaterialApp(
             home: Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              backgroundColor: Color(0xFF1E4D2B),
+              body: Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
             ),
           );
         }
+
         final userId = snap.data!;
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider(
-              create: (_) => sl<KazaCalculatorBloc>()
-                ..add(KazaCalculatorStarted(userId)),
-            ),
-            BlocProvider(
-              create: (_) =>
-                  sl<DashboardBloc>()..add(DashboardLoaded(userId)),
-            ),
-            BlocProvider(create: (_) => sl<SimulatorBloc>()),
-          ],
+
+        return BlocProvider(
+          create: (_) => sl<KazaBloc>()..add(LoadKazaMetrics(userId)),
           child: MaterialApp(
             title: 'Kaza Takip',
             theme: AppTheme.light,
@@ -65,7 +58,7 @@ class _KazaTakipAppState extends State<KazaTakipApp> {
               Locale('tr'),
               Locale('en'),
             ],
-            home: const DashboardPage(),
+            home: const MainShell(),
           ),
         );
       },

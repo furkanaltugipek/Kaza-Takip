@@ -47,4 +47,6 @@ Firestore yazmaları **yerel önbellekte** toplanır. Her **10 değişiklikten**
 | Hatim Takibi | 🔜 |
 | Zikirmatik | 🔜 |
 | Sadaka Hedefleri | 🔜 |
-| Katkı Takvimi (GitHub stili) | 🔜 |
+| Katkı Takvimi (GitHub stili) | ✅ |
+| Oruç / Hatim / Zikirmatik / Sadaka | ✅ |
+| Namaz Vakti Hatırlatıcısı | ✅ |

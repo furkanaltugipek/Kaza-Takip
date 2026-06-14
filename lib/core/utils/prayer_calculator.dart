@@ -1,118 +1,152 @@
 import '../constants/prayer_constants.dart';
 
 /// Pure math — no framework dependencies.
-/// All calculations follow the Hanafi school of jurisprudence.
+/// Handles calculation of missed (kaza) prayers following the Hanafi school.
 class PrayerCalculator {
   PrayerCalculator._();
 
-  /// Calculates total kaza debt for each prayer type.
+  /// Default puberty age used when none is supplied.
+  static const int defaultPubertyAge = 13;
+
+  /// The 6 daily vakit tracked (5 fard + Witr wajib).
+  /// Keys are stable identifiers; display names live in [PrayerConstants].
+  static const List<String> vakitKeys = PrayerConstants.prayerKeys;
+
+  /// Rakat counts per vakit. Total = 20 rakats/day.
+  static const Map<String, int> rakatsPerVakit = PrayerConstants.fardRakats;
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Primary calculation
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /// Calculates the kaza prayer debt.
   ///
   /// [birthDate]        : User's date of birth.
-  /// [pubertyDate]      : Date when the user reached puberty (baligh).
-  /// [regularStartDate] : Date when the user started praying regularly.
-  /// [isFemale]         : Whether to subtract menstrual exemptions.
+  /// [pubertyAge]       : Age (years) at which prayer became fard. Defaults to 13.
+  /// [prayerStartDate]  : Date the user began praying regularly.
+  /// [estimatedOffDays] : Total excused days to subtract (illness, menstruation,
+  ///                      travel, etc.). Defaults to 0.
   ///
-  /// Returns a map of prayerKey → missed count.
-  static Map<String, int> calculateKazaDebt({
+  /// Returns a [KazaCalculationResult] holding total days, per-vakit breakdown,
+  /// and total rakats.
+  static KazaCalculationResult calculate({
     required DateTime birthDate,
-    required DateTime pubertyDate,
-    required DateTime regularStartDate,
-    required bool isFemale,
+    int? pubertyAge,
+    required DateTime prayerStartDate,
+    int estimatedOffDays = 0,
   }) {
-    // The debt window: from puberty until user started praying regularly.
-    // If regularStartDate <= pubertyDate, there is no debt.
-    if (!regularStartDate.isAfter(pubertyDate)) {
-      return {for (final k in PrayerConstants.prayerKeys) k: 0};
-    }
+    final age = pubertyAge ?? defaultPubertyAge;
 
-    final totalDays = regularStartDate.difference(pubertyDate).inDays;
-    final totalMonths = totalDays / 30.4375; // average Gregorian month
+    // The day the user reached puberty (birthday + pubertyAge years).
+    final pubertyDate = DateTime(
+      birthDate.year + age,
+      birthDate.month,
+      birthDate.day,
+    );
 
-    int basePrayersPerKey = totalDays; // each key missed once per day
+    // Days between reaching puberty and starting regular prayer.
+    final rawDays = prayerStartDate.difference(pubertyDate).inDays;
 
-    // Female exemption: menstrual + nifas (postnatal bleeding).
-    // Prayers are NOT made up for menstrual/nifas periods.
-    // Fasting IS made up — handled in fasting module.
-    int exemptDays = 0;
-    if (isFemale) {
-      // Exempt ~7 days/month for hayd (menstruation).
-      exemptDays = (totalMonths * PrayerConstants.avgMenstrualDaysPerMonth).round();
-    }
+    // Subtract excused days; never go below zero.
+    final raw = rawDays - estimatedOffDays;
+    final int totalDaysDebt = raw < 0 ? 0 : raw;
 
-    final effectiveDays = (totalDays - exemptDays).clamp(0, totalDays);
+    // Each vakit is missed once per debt-day.
+    final breakdown = <String, int>{
+      for (final key in vakitKeys) key: totalDaysDebt,
+    };
 
-    final Map<String, int> result = {};
-    for (final key in PrayerConstants.prayerKeys) {
-      result[key] = effectiveDays;
-    }
-    return result;
+    return KazaCalculationResult(
+      totalDays: totalDaysDebt,
+      pubertyDate: pubertyDate,
+      breakdown: breakdown,
+      totalRakats: totalDaysDebt * PrayerConstants.totalDailyRakats,
+    );
   }
 
-  /// Converts per-prayer kaza counts to total rakats.
-  static Map<String, int> toRakats(Map<String, int> kazaCounts) {
-    final Map<String, int> rakats = {};
-    for (final entry in kazaCounts.entries) {
-      rakats[entry.key] =
-          entry.value * (PrayerConstants.fardRakats[entry.key] ?? 0);
-    }
-    return rakats;
-  }
+  // ───────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ───────────────────────────────────────────────────────────────────────────
 
-  /// Total number of kaza prayers across all types.
-  static int totalKazaCount(Map<String, int> kazaCounts) =>
-      kazaCounts.values.fold(0, (a, b) => a + b);
+  /// Converts a per-vakit count map into a per-vakit rakat map.
+  static Map<String, int> toRakats(Map<String, int> counts) => {
+        for (final entry in counts.entries)
+          entry.key: entry.value * (rakatsPerVakit[entry.key] ?? 0),
+      };
 
-  /// Total kaza rakats across all prayer types.
-  static int totalRakatCount(Map<String, int> kazaCounts) =>
-      toRakats(kazaCounts).values.fold(0, (a, b) => a + b);
+  /// Total number of kaza prayers across all vakit.
+  static int totalCount(Map<String, int> counts) =>
+      counts.values.fold(0, (a, b) => a + b);
 
-  /// Estimates the finish date given daily targets per prayer.
-  ///
-  /// [kazaCounts]    : current remaining kaza per prayer key.
-  /// [dailyTargets]  : how many extra kaza prayers per type per day.
-  ///
-  /// Returns the estimated completion [DateTime], or null if targets are zero.
+  /// Total rakats across all vakit.
+  static int totalRakats(Map<String, int> counts) =>
+      toRakats(counts).values.fold(0, (a, b) => a + b);
+
+  /// Estimates the completion date given a remaining-debt map and a uniform
+  /// daily target per vakit. Returns null when the target is zero.
   static DateTime? estimateCompletionDate({
-    required Map<String, int> kazaCounts,
-    required Map<String, int> dailyTargets,
-    DateTime? startDate,
+    required Map<String, int> remaining,
+    required int dailyTargetPerVakit,
+    DateTime? from,
   }) {
-    final start = startDate ?? DateTime.now();
+    if (dailyTargetPerVakit <= 0) return null;
+    final start = from ?? DateTime.now();
 
-    // Find the prayer that takes the longest to clear.
     int maxDays = 0;
-    for (final key in PrayerConstants.prayerKeys) {
-      final remaining = kazaCounts[key] ?? 0;
-      final daily = dailyTargets[key] ?? 0;
-      if (daily <= 0) continue;
-      final days = (remaining / daily).ceil();
+    for (final key in vakitKeys) {
+      final count = remaining[key] ?? 0;
+      final days = (count / dailyTargetPerVakit).ceil();
       if (days > maxDays) maxDays = days;
     }
-
     if (maxDays == 0) return null;
     return start.add(Duration(days: maxDays));
   }
 
-  /// Builds the daily kaza count from a mode string.
+  /// Daily target map for the three difficulty modes (1 / 2 / 4 per vakit).
   static Map<String, int> dailyTargetsFromMode(String mode) {
-    final multiplier = _modeMultiplier(mode);
-    return {for (final k in PrayerConstants.prayerKeys) k: multiplier};
+    final multiplier = switch (mode) {
+      'easy' => 1,
+      'medium' => 2,
+      'hard' => 4,
+      _ => 1,
+    };
+    return {for (final k in vakitKeys) k: multiplier};
   }
+}
 
-  static int _modeMultiplier(String mode) {
-    switch (mode) {
-      case 'easy':
-        return 1;
-      case 'medium':
-        return 2;
-      case 'hard':
-        return 4;
-      default:
-        return 1;
-    }
-  }
+/// Structured output of a kaza debt calculation.
+class KazaCalculationResult {
+  /// Total number of full days of missed prayers.
+  final int totalDays;
 
-  /// Returns how many days have passed since puberty (for display).
-  static int daysSincePuberty(DateTime pubertyDate) =>
-      DateTime.now().difference(pubertyDate).inDays.clamp(0, 999999);
+  /// The computed puberty date (birthday + pubertyAge).
+  final DateTime pubertyDate;
+
+  /// Per-vakit missed prayer counts (fajr, dhuhr, asr, maghrib, isha, witr).
+  final Map<String, int> breakdown;
+
+  /// Total rakats across all missed prayers (totalDays * 20).
+  final int totalRakats;
+
+  const KazaCalculationResult({
+    required this.totalDays,
+    required this.pubertyDate,
+    required this.breakdown,
+    required this.totalRakats,
+  });
+
+  /// Total number of individual kaza prayers (6 per day).
+  int get totalPrayers =>
+      breakdown.values.fold(0, (a, b) => a + b);
+
+  Map<String, dynamic> toMap() => {
+        'totalDays': totalDays,
+        'pubertyDate': pubertyDate.toIso8601String(),
+        'breakdown': breakdown,
+        'totalRakats': totalRakats,
+      };
+
+  @override
+  String toString() =>
+      'KazaCalculationResult(totalDays: $totalDays, totalRakats: $totalRakats, breakdown: $breakdown)';
 }
