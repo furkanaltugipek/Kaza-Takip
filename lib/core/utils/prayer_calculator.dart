@@ -48,8 +48,8 @@ class PrayerCalculator {
     final rawDays = prayerStartDate.difference(pubertyDate).inDays;
 
     // Subtract excused days; never go below zero.
-    final totalDaysDebt =
-        (rawDays - estimatedOffDays).clamp(0, rawDays < 0 ? 0 : rawDays);
+    final raw = rawDays - estimatedOffDays;
+    final int totalDaysDebt = raw < 0 ? 0 : raw;
 
     // Each vakit is missed once per debt-day.
     final breakdown = <String, int>{

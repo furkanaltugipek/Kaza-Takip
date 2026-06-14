@@ -40,19 +40,23 @@ class _WizardPageState extends State<WizardPage> {
 
   void _next() {
     if (_page < 3) {
-      _pageCtrl.nextPage(
-          duration: const Duration(milliseconds: 380),
-          curve: Curves.easeInOutCubic);
       setState(() => _page++);
+      _pageCtrl.animateToPage(
+        _page,
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeInOutCubic,
+      );
     }
   }
 
   void _back() {
     if (_page > 0) {
-      _pageCtrl.previousPage(
-          duration: const Duration(milliseconds: 380),
-          curve: Curves.easeInOutCubic);
       setState(() => _page--);
+      _pageCtrl.animateToPage(
+        _page,
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeInOutCubic,
+      );
     }
   }
 
@@ -74,6 +78,15 @@ class _WizardPageState extends State<WizardPage> {
   Widget build(BuildContext context) {
     return BlocConsumer<KazaBloc, KazaState>(
       listener: (context, state) {
+        // Hesaplama tamamlanınca sonuç ekranına (4. adım) otomatik geç.
+        if (state is KazaCalculated && _page == 2) {
+          _next();
+        }
+        // Hata olursa kullanıcıyı bilgilendir, son adıma da geç ki mesaj görünsün.
+        if (state is KazaError && _page == 2) {
+          _next();
+        }
+        // Plan kaydedilip ana ekrana geçişe hazır.
         if (state is KazaLoaded) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => BlocProvider.value(
@@ -92,7 +105,8 @@ class _WizardPageState extends State<WizardPage> {
               children: [
                 _Header(
                   page: _page,
-                  onBack: _page > 0 ? _back : null,
+                  // Yüklenme dışında her zaman geri dönebilsin.
+                  onBack: (_page > 0 && state is! KazaLoading) ? _back : null,
                 ),
                 Expanded(
                   child: PageView(
