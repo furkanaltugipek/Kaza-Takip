@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v flutter >/dev/null 2>&1 && (cd \"$CLAUDE_PROJECT_DIR\" && flutter pub get >/dev/null 2>&1) || true"
+          }
+        ]
+      }
+    ]
+  }
+}

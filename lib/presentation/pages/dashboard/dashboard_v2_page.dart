@@ -21,126 +21,130 @@ class DashboardV2Page extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<KazaBloc, KazaState>(
       builder: (context, state) {
+        // Namaz vakitleri her durumda en üstte görünür — kaza borcu
+        // hesaplanmamış olsa bile kullanıcı vakitleri ve geri sayımı görür.
+        final Map<String, int> completedToday = state is KazaLoaded
+            ? {
+                for (final k in PrayerConstants.prayerKeys)
+                  k: state.completedTodayFor(k),
+              }
+            : const {};
+
+        Widget content;
         if (state is KazaLoading || state is KazaInitial) {
-          return const _LoadingView();
-        }
-        if (state is KazaLoaded && state.metrics.totalDebtCount == 0) {
-          return const _SetupView();
-        }
-        if (state is KazaLoaded) {
+          content = const _BelowBarLoading();
+        } else if (state is KazaLoaded && state.metrics.totalDebtCount == 0) {
+          content = const _SetupBody();
+        } else if (state is KazaLoaded) {
           return _LoadedDashboard(state: state);
+        } else if (state is KazaError) {
+          content = _ErrorBody(message: state.message);
+        } else {
+          content = const _SetupBody();
         }
-        if (state is KazaError) {
-          return _ErrorView(message: state.message);
-        }
-        return const _SetupView();
+
+        return Container(
+          color: AppColors.background,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PrayerTimesTopBar(completedToday: completedToday),
+                const SizedBox(height: 16),
+                content,
+              ],
+            ),
+          ),
+        );
       },
     );
   }
 }
 
-// ── Yükleniyor ────────────────────────────────────────────────────────────────
+// ── Yükleniyor (üst bar altı) ────────────────────────────────────────────────
 
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
+class _BelowBarLoading extends StatelessWidget {
+  const _BelowBarLoading();
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 48),
+      child: Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
   }
 }
 
-// ── Hata ──────────────────────────────────────────────────────────────────────
+// ── Hata (üst bar altı) ──────────────────────────────────────────────────────
 
-class _ErrorView extends StatelessWidget {
+class _ErrorBody extends StatelessWidget {
   final String message;
-  const _ErrorView({required this.message});
+  const _ErrorBody({required this.message});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline,
-                  color: AppColors.error, size: 56),
-              const SizedBox(height: 16),
-              Text(message,
-                  style: AppTextStyles.bodyMedium,
-                  textAlign: TextAlign.center),
-            ],
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+          const SizedBox(height: 12),
+          Text(message,
+              style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+        ],
       ),
     );
   }
 }
 
-// ── Kurulum yapılmamış ────────────────────────────────────────────────────────
+// ── Kurulum yapılmamış (üst bar altı) ────────────────────────────────────────
 
-class _SetupView extends StatelessWidget {
-  const _SetupView();
+class _SetupBody extends StatelessWidget {
+  const _SetupBody();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(36),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.mosque_rounded,
-                      size: 52, color: AppColors.primary),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  'Hoş Geldiniz',
-                  style: AppTextStyles.displayMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Kaza namazı takibine başlamak için borç hesabı yapın.',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: const Color(0xFF666666)),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.calculate_outlined),
-                    label: const Text('Kaza Borcumu Hesapla'),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<KazaBloc>(),
-                          child: const WizardPage(),
-                        ),
-                      ),
-                    ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+      child: Column(
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.mosque_rounded,
+                size: 46, color: AppColors.primary),
+          ),
+          const SizedBox(height: 20),
+          Text('Hoş Geldiniz',
+              style: AppTextStyles.displayMedium, textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(
+            'Kaza namazı takibine başlamak için borç hesabı yapın.',
+            style: AppTextStyles.bodyMedium
+                .copyWith(color: const Color(0xFF666666)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.calculate_outlined),
+              label: const Text('Kaza Borcumu Hesapla'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: context.read<KazaBloc>(),
+                    child: const WizardPage(),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

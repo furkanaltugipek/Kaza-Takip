@@ -37,6 +37,18 @@ class PrayerTimeCubit extends Cubit<PrayerTimeState> {
 
   /// Bugünkü vakti yükler — önce önbellek, sonra ağ.
   Future<void> loadForToday() async {
+    try {
+      await _loadForTodayInternal();
+    } catch (e) {
+      // Beklenmedik bir hatada da kullanıcı kilitli kalmasın — bağlantı uyarısı.
+      emit(PrayerTimeNoConnection(
+        city: currentCity,
+        message: 'Beklenmedik bir hata oluştu: $e',
+      ));
+    }
+  }
+
+  Future<void> _loadForTodayInternal() async {
     final city = currentCity;
     final now = DateTime.now();
     final cached = _local.getMonth(city: city, year: now.year, month: now.month);
