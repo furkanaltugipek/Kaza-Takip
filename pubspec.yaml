@@ -44,6 +44,7 @@ dependencies:
   uuid: ^4.5.1
   shared_preferences: ^2.3.3
   json_annotation: ^4.9.0
+  http: ^1.2.2
 
   # Bildirimler & Namaz Vakti
   flutter_local_notifications: ^17.2.3

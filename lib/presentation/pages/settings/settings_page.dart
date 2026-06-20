@@ -5,6 +5,7 @@ import 'package:kaza_takip/core/services/notification_service.dart';
 import 'package:kaza_takip/core/theme/app_colors.dart';
 import 'package:kaza_takip/core/theme/app_text_styles.dart';
 import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
+import 'package:kaza_takip/presentation/blocs/prayer_time/prayer_time_cubit.dart';
 import 'package:kaza_takip/presentation/pages/wizard/wizard_page.dart';
 
 /// Ana shell içinde gömülü kullanıma uygun Ayarlar gövdesi (AppBar içermez).
@@ -22,6 +23,7 @@ class SettingsPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
+              const _CityTile(),
               const _NotificationTile(),
               _SettingsTile(
                 icon: Icons.calculate_outlined,
@@ -62,6 +64,114 @@ class SettingsPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// "Şehir Değiştir" — Aladhan vakitleri için aktif şehri günceller.
+class _CityTile extends StatelessWidget {
+  const _CityTile();
+
+  static const _popular = [
+    'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Adana', 'Antalya',
+    'Konya', 'Gaziantep', 'Kayseri', 'Eskişehir', 'Trabzon',
+    'Samsun', 'Aksaray', 'Şanlıurfa', 'Diyarbakır',
+  ];
+
+  Future<void> _showDialog(BuildContext context) async {
+    final cubit = context.read<PrayerTimeCubit>();
+    final controller = TextEditingController(text: cubit.currentCity);
+
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          title: const Text('Şehir Değiştir'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  hintText: 'Örn. Aksaray',
+                  prefixIcon: Icon(Icons.location_city_outlined),
+                ),
+                autofocus: true,
+                onSubmitted: (v) => Navigator.of(dialogCtx).pop(v),
+              ),
+              const SizedBox(height: 16),
+              Text('Popüler şehirler', style: AppTextStyles.bodySmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _popular
+                    .map(
+                      (c) => ActionChip(
+                        label: Text(c),
+                        onPressed: () => Navigator.of(dialogCtx).pop(c),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: const Text('Vazgeç'),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(dialogCtx).pop(controller.text.trim()),
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (picked != null && picked.isNotEmpty) {
+      await cubit.changeCity(picked);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Şehir güncellendi: $picked')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<PrayerTimeCubit, PrayerTimeState>(
+      builder: (ctx, state) {
+        final city = switch (state) {
+          PrayerTimeLoading(:final city) => city,
+          PrayerTimeLoaded(:final city) => city,
+          PrayerTimeNoConnection(:final city) => city,
+          _ => ctx.read<PrayerTimeCubit>().currentCity,
+        };
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: ListTile(
+            leading:
+                const Icon(Icons.location_on_outlined, color: AppColors.primary),
+            title: Text('Şehir Değiştir', style: AppTextStyles.titleMedium),
+            subtitle: Text('Aktif: $city', style: AppTextStyles.bodySmall),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showDialog(context),
+          ),
+        );
+      },
     );
   }
 }

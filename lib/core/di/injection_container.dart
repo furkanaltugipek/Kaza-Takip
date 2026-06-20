@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kaza_takip/core/services/notification_service.dart';
 import 'package:kaza_takip/data/datasources/local/hive_datasource.dart';
 import 'package:kaza_takip/data/datasources/local/ibadet_service.dart';
+import 'package:kaza_takip/data/datasources/prayer_times_local_data_source.dart';
+import 'package:kaza_takip/data/datasources/prayer_times_remote_data_source.dart';
 import 'package:kaza_takip/data/datasources/remote/firestore_datasource.dart';
 import 'package:kaza_takip/data/repositories/kaza_repository_impl.dart';
 import 'package:kaza_takip/data/repositories/user_repository_impl.dart';
@@ -16,6 +18,7 @@ import 'package:kaza_takip/presentation/bloc/dashboard/dashboard_bloc.dart';
 import 'package:kaza_takip/presentation/bloc/kaza_calculator/kaza_calculator_bloc.dart';
 import 'package:kaza_takip/presentation/bloc/simulator/simulator_bloc.dart';
 import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
+import 'package:kaza_takip/presentation/blocs/prayer_time/prayer_time_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -28,6 +31,12 @@ Future<void> initDependencies() async {
   sl.registerSingleton<FirestoreDataSource>(FirestoreDataSource());
 
   sl.registerSingleton<IbadetService>(IbadetService(hive));
+
+  // Aladhan namaz vakti veri kaynakları (önbellek + uzak)
+  sl.registerSingleton<PrayerTimesLocalDataSource>(
+      PrayerTimesLocalDataSource(hive));
+  sl.registerSingleton<PrayerTimesRemoteDataSource>(
+      PrayerTimesRemoteDataSource());
 
   final prefs = await SharedPreferences.getInstance();
   sl.registerSingleton<SharedPreferences>(prefs);
@@ -74,5 +83,12 @@ Future<void> initDependencies() async {
   sl.registerFactory(() => KazaBloc(
         kazaRepository: sl(),
         userRepository: sl(),
+      ));
+
+  // ── Namaz vakti Cubit (Aladhan + Hive önbellek) ───────────────────────────
+  sl.registerFactory(() => PrayerTimeCubit(
+        local: sl(),
+        remote: sl(),
+        prefs: sl(),
       ));
 }
