@@ -11,6 +11,7 @@ import 'package:kaza_takip/presentation/widgets/common/kaza_progress_bar.dart';
 import 'package:kaza_takip/presentation/widgets/common/streak_card.dart';
 import 'package:kaza_takip/presentation/widgets/daily_inspiration_card.dart';
 import 'package:kaza_takip/presentation/widgets/daily_prayer_tile.dart';
+import 'package:kaza_takip/presentation/widgets/prayer_times_top_bar.dart';
 
 /// Bugünkü Plan — ana dashboard ekranı.
 class DashboardV2Page extends StatelessWidget {
@@ -183,19 +184,24 @@ class _LoadedDashboardState extends State<_LoadedDashboard>
     final s = widget.state;
     final metrics = s.metrics;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: NestedScrollView(
-        headerSliverBuilder: (ctx, innerScroll) => [
-          _DashboardAppBar(state: s),
-        ],
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+    return Container(
+      color: AppColors.background,
+      child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // İlerleme özet kartı
-              _SummaryCard(
+              // Namaz vakitleri + Hicri tarih + canlı geri sayım + dini gün uyarısı
+              PrayerTimesTopBar(
+                completedToday: {
+                  for (final k in PrayerConstants.prayerKeys)
+                    k: s.completedTodayFor(k),
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Kaza ilerleme özeti
+              _ProgressInline(
                 completionRatio: metrics.completionPercentage,
                 remainingCount: metrics.totalRemaining,
                 remainingRakats: metrics.totalRakatsRemaining,
@@ -261,65 +267,17 @@ class _LoadedDashboardState extends State<_LoadedDashboard>
             ],
           ),
         ),
-      ),
     );
   }
 }
 
-// ── SliverAppBar ──────────────────────────────────────────────────────────────
+// ── Kompakt ilerleme satırı ──────────────────────────────────────────────────
 
-class _DashboardAppBar extends StatelessWidget {
-  final KazaLoaded state;
-  const _DashboardAppBar({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final pending = state.pendingChanges;
-    return SliverAppBar(
-      expandedHeight: 0,
-      pinned: true,
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      title: const Text('Bugünkü Planın'),
-      actions: [
-        if (pending > 0)
-          Tooltip(
-            message: '$pending değişiklik senkronize edilmedi',
-            child: IconButton(
-              icon: const Icon(Icons.cloud_upload_outlined),
-              onPressed: () =>
-                  context.read<KazaBloc>().add(const SyncDataWithCloud()),
-            ),
-          ),
-        IconButton(
-          icon: const Icon(Icons.tune_outlined),
-          onPressed: () => _showModeSheet(context, state.planMode),
-        ),
-      ],
-    );
-  }
-
-  void _showModeSheet(BuildContext ctx, String current) {
-    showModalBottomSheet(
-      context: ctx,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => BlocProvider.value(
-        value: ctx.read<KazaBloc>(),
-        child: _ModeSheet(current: current),
-      ),
-    );
-  }
-}
-
-// ── Özet kartı ────────────────────────────────────────────────────────────────
-
-class _SummaryCard extends StatelessWidget {
+class _ProgressInline extends StatelessWidget {
   final double completionRatio;
   final int remainingCount;
   final int remainingRakats;
-  const _SummaryCard({
+  const _ProgressInline({
     required this.completionRatio,
     required this.remainingCount,
     required this.remainingRakats,
@@ -329,10 +287,10 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.divider),
       ),
       child: KazaProgressBar(
@@ -507,96 +465,3 @@ class _RemainingDebtsExpanderState
   }
 }
 
-// ── Mod seçim alt sayfası ─────────────────────────────────────────────────────
-
-class _ModeSheet extends StatelessWidget {
-  final String current;
-  const _ModeSheet({required this.current});
-
-  @override
-  Widget build(BuildContext context) {
-    const modes = [
-      ('EASY', 'Kolay', 'Her vakit sonrası 1 kaza namazı', Icons.spa_outlined),
-      ('MEDIUM', 'Orta', 'Her vakit sonrası 2 kaza namazı',
-          Icons.fitness_center_outlined),
-      ('HARD', 'Yoğun', 'Her vakit sonrası 4 kaza namazı',
-          Icons.local_fire_department_outlined),
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text('Günlük Tempo', style: AppTextStyles.headlineMedium),
-          const SizedBox(height: 4),
-          Text('Her vakit için günlük kaza hedefi.',
-              style: AppTextStyles.bodySmall),
-          const SizedBox(height: 20),
-          ...modes.map((m) {
-            final selected = current == m.$1;
-            return GestureDetector(
-              onTap: () {
-                context.read<KazaBloc>().add(ChangePlanMode(m.$1));
-                Navigator.pop(context);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.primaryContainer
-                      : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: selected
-                        ? AppColors.primary
-                        : AppColors.divider,
-                    width: selected ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(m.$4,
-                        color: selected
-                            ? AppColors.primary
-                            : const Color(0xFF666666)),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(m.$2,
-                              style: AppTextStyles.titleMedium
-                                  .copyWith(
-                                      color: selected
-                                          ? AppColors.primary
-                                          : null)),
-                          Text(m.$3,
-                              style: AppTextStyles.bodySmall),
-                        ],
-                      ),
-                    ),
-                    if (selected)
-                      const Icon(Icons.check_circle,
-                          color: AppColors.primary),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}

@@ -8,17 +8,18 @@ import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
 import 'package:kaza_takip/presentation/pages/calendar/calendar_page.dart';
 import 'package:kaza_takip/presentation/pages/dashboard/dashboard_v2_page.dart';
 import 'package:kaza_takip/presentation/pages/ibadet/ibadet_center_page.dart';
-import 'package:kaza_takip/presentation/pages/profile/profile_page.dart';
 import 'package:kaza_takip/presentation/pages/qibla/qibla_page.dart';
-import 'package:kaza_takip/presentation/pages/simulator/simulator_page.dart';
+import 'package:kaza_takip/presentation/pages/settings/settings_page.dart';
+import 'package:kaza_takip/presentation/pages/spiritual/spiritual_lessons_page.dart';
 
-/// Uygulama bölümleri — sıra, menü sırasıyla birebir eşleşmeli.
+/// Uygulama bölümleri — sıra menü sırasıyla birebir eşleşmeli.
 enum _Section {
   dashboard,
   calendar,
   ibadet,
   qibla,
-  simulator,
+  spiritual,
+  settings,
 }
 
 class MainShell extends StatefulWidget {
@@ -33,10 +34,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   static const _titles = {
     _Section.dashboard: 'Ana Sayfa',
-    _Section.calendar: 'Takvim & İstatistik',
+    _Section.calendar: 'Takvim & Analiz',
     _Section.ibadet: 'İbadet Merkezi',
     _Section.qibla: 'Kıble Pusulası',
-    _Section.simulator: 'Bitiş Simülatörü',
+    _Section.spiritual: 'Manevi Dersler',
+    _Section.settings: 'Ayarlar',
   };
 
   static const _icons = {
@@ -44,7 +46,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     _Section.calendar: Icons.grid_view_outlined,
     _Section.ibadet: Icons.mosque_outlined,
     _Section.qibla: Icons.explore_outlined,
-    _Section.simulator: Icons.show_chart_outlined,
+    _Section.spiritual: Icons.auto_stories_outlined,
+    _Section.settings: Icons.settings_outlined,
   };
 
   Widget get _body {
@@ -53,7 +56,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       _Section.calendar => const CalendarPage(),
       _Section.ibadet => const IbadetCenterPage(),
       _Section.qibla => const QiblaPage(),
-      _Section.simulator => const SimulatorPage(),
+      _Section.spiritual => const SpiritualLessonsPage(),
+      _Section.settings => const SettingsPage(),
     };
   }
 
@@ -84,12 +88,14 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: PopupMenuButton<_Section>(
-          icon: const Icon(Icons.menu, color: Colors.white),
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          tooltip: 'Menü',
           offset: const Offset(0, 48),
           color: AppColors.surface,
           shape: RoundedRectangleBorder(
@@ -105,19 +111,22 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   Icon(
                     _icons[s],
                     size: 20,
-                    color: selected ? AppColors.primary : const Color(0xFF555555),
+                    color:
+                        selected ? AppColors.primary : const Color(0xFF555555),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     _titles[s]!,
                     style: AppTextStyles.titleMedium.copyWith(
                       color: selected ? AppColors.primary : null,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight:
+                          selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   if (selected) ...[
                     const Spacer(),
-                    const Icon(Icons.check, size: 16, color: AppColors.primary),
+                    const Icon(Icons.check,
+                        size: 16, color: AppColors.primary),
                   ],
                 ],
               ),
@@ -128,21 +137,6 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           _titles[_section]!,
           style: AppTextStyles.titleLarge.copyWith(color: Colors.white),
         ),
-        actions: [
-          // Profil butonu sağ üstte kalıyor.
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.white),
-            tooltip: 'Profil & Ayarlar',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<KazaBloc>(),
-                  child: const ProfilePage(),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
