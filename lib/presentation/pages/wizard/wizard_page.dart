@@ -10,6 +10,9 @@ import 'package:kaza_takip/presentation/pages/main_shell.dart';
 import 'package:kaza_takip/core/utils/prayer_calculator.dart';
 import 'package:kaza_takip/presentation/widgets/common/app_button.dart';
 import 'package:kaza_takip/presentation/widgets/common/date_picker_field.dart';
+import 'package:kaza_takip/presentation/widgets/ottoman/crescent_step_indicator.dart';
+import 'package:kaza_takip/presentation/widgets/ottoman/geometric_watermark.dart';
+import 'package:kaza_takip/presentation/widgets/ottoman/tezhip_corners.dart';
 
 /// 4 adımlı kaza borcu hesaplama sihirbazı.
 class WizardPage extends StatefulWidget {
@@ -150,7 +153,7 @@ class _WizardPageState extends State<WizardPage> {
   }
 }
 
-// ── Üst başlık & ilerleme çubuğu ─────────────────────────────────────────────
+// ── Üst başlık: yumuşak emerald→krem gradient + hilal step indicator ─────────
 
 class _Header extends StatelessWidget {
   final int page;
@@ -167,55 +170,91 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.primary,
-      padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: [0.0, 0.55, 1.0],
+          colors: [
+            AppColors.imperial,
+            Color(0xFF2A5839),
+            AppColors.paper,
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 18),
+      child: Stack(
         children: [
-          Row(
+          // Çok hafif filigran — sadece üst yarısında
+          Positioned.fill(
+            child: IgnorePointer(
+              child: GeometricWatermark(
+                color: AppColors.matteGold,
+                opacity: 0.05,
+                cellSize: 52,
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (onBack != null)
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new,
-                      color: Colors.white70, size: 20),
-                  onPressed: onBack,
-                )
-              else
-                const SizedBox(width: 48),
-              Expanded(
-                child: Text(
-                  'Kaza Borcu Hesapla',
-                  style: AppTextStyles.titleLarge
-                      .copyWith(color: Colors.white),
-                  textAlign: TextAlign.center,
+              Row(
+                children: [
+                  if (onBack != null)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new,
+                          color: Colors.white, size: 18),
+                      onPressed: onBack,
+                    )
+                  else
+                    const SizedBox(width: 48),
+                  Expanded(
+                    child: Text(
+                      'Kaza Borcu Hesapla',
+                      style: AppTextStyles.headlineMedium.copyWith(
+                        color: Colors.white,
+                        letterSpacing: 0.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ADIM ${page + 1}/4',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.matteGoldLight,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _titles[page],
+                      style: AppTextStyles.headlineLarge.copyWith(
+                        color: Colors.white,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    CrescentStepIndicator(
+                      currentStep: page,
+                      totalSteps: 4,
+                      trackColor: Colors.white.withOpacity(0.22),
+                      completedColor: AppColors.matteGoldLight,
+                      markerColor: AppColors.matteGoldLight,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 48),
             ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Adım ${page + 1}/4 — ${_titles[page]}',
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: Colors.white60),
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: (page + 1) / 4,
-                    minHeight: 6,
-                    backgroundColor: Colors.white24,
-                    valueColor:
-                        const AlwaysStoppedAnimation(AppColors.secondary),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -587,47 +626,114 @@ class _ResultSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryLight],
+          colors: [AppColors.imperialDark, AppColors.imperial],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.matteGold, width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x22113C22),
+            blurRadius: 22,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          const Icon(Icons.mosque_rounded,
-              color: Colors.white54, size: 44),
-          const SizedBox(height: 12),
-          Text(
-            _fmt(result.totalPrayers),
-            style: AppTextStyles.displayLarge
-                .copyWith(color: Colors.white, fontSize: 52),
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(19),
+              child: GeometricWatermark(
+                color: AppColors.matteGold,
+                opacity: 0.06,
+                cellSize: 56,
+              ),
+            ),
           ),
-          Text('Toplam Kaza Namazı',
-              style: AppTextStyles.titleMedium
-                  .copyWith(color: Colors.white70)),
-          const SizedBox(height: 12),
-          const Divider(color: Colors.white24),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _StatItem(
-                  label: 'Gün',
-                  value: _fmt(result.totalDays)),
-              _StatItem(
-                  label: 'Rekat',
-                  value: _fmt(result.totalRakats)),
-            ],
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: TezhipCornersPainter(
+                  color: AppColors.matteGoldLight,
+                  cornerSize: 18,
+                  strokeWidth: 1.2,
+                  inset: 10,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Ergenlik: ${AppDateUtils.toDisplay(result.pubertyDate)}',
-            style: AppTextStyles.bodySmall
-                .copyWith(color: Colors.white54),
+          Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.matteGold.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.matteGoldLight,
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.mosque_rounded,
+                    color: AppColors.matteGoldLight,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _fmt(result.totalPrayers),
+                  style: AppTextStyles.prayerCount.copyWith(
+                    color: Colors.white,
+                    fontSize: 52,
+                  ),
+                ),
+                Text(
+                  'Toplam Kaza Namazı',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.matteGoldLight,
+                    letterSpacing: 1.6,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  height: 1,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x00C5A059),
+                        AppColors.matteGold,
+                        Color(0x00C5A059),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _StatItem(label: 'Gün', value: _fmt(result.totalDays)),
+                    _StatItem(label: 'Rekat', value: _fmt(result.totalRakats)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Ergenlik: ${AppDateUtils.toDisplay(result.pubertyDate)}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.matteGoldLight.withOpacity(0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

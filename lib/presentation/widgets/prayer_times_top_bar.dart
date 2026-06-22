@@ -10,14 +10,15 @@ import 'package:kaza_takip/core/utils/islamic_events.dart';
 import 'package:kaza_takip/core/utils/prayer_times_helper.dart';
 import 'package:kaza_takip/data/models/prayer_time_model.dart';
 import 'package:kaza_takip/presentation/blocs/prayer_time/prayer_time_cubit.dart';
+import 'package:kaza_takip/presentation/widgets/ottoman/geometric_watermark.dart';
+import 'package:kaza_takip/presentation/widgets/ottoman/mihrab_arch.dart';
+import 'package:kaza_takip/presentation/widgets/ottoman/tezhip_corners.dart';
 
-/// Dashboard üst bandı:
-/// • Gregoryen + Hicri tarih + şehir
-/// • "Vaktin Çıkmasına Kalan Süre" canlı geri sayımı (HH:MM:SS)
-/// • 6 vakit kartı (İmsak, Güneş, Öğle, İkindi, Akşam, Yatsı)
-/// • Dini gün/gece varsa alt alarm kartı.
+/// Neo-Ottoman dashboard üst bandı.
 ///
-/// Verisi [PrayerTimeCubit]'ten gelir — önce Hive önbelleği, sonra Aladhan API.
+/// • Krem zemin + ince geometrik filigran
+/// • Mihrab kemerli, mat-altın kenarlı geri sayım kartı (tezhip köşeleri ile)
+/// • Iznik karo ilhamlı 6 vakit kartı — tamamlananlarda emerald + altın tik
 class PrayerTimesTopBar extends StatelessWidget {
   /// Her vakit anahtarı (fajr/dhuhr/asr/maghrib/isha) için bugün
   /// tamamlanmış kaza sayısı — kart tik simgesini tetikler.
@@ -50,7 +51,7 @@ class PrayerTimesTopBar extends StatelessWidget {
   }
 }
 
-// ── Ortak gradient kabuk ─────────────────────────────────────────────────────
+// ── Dış kabuk — Mihrab kart + filigran + tarih başlığı + dini gün uyarısı ────
 
 class _Shell extends StatelessWidget {
   final String? city;
@@ -62,41 +63,51 @@ class _Shell extends StatelessWidget {
     final hijri = HijriDate.fromGregorian(DateTime.now());
     final event = IslamicEvents.eventFor(hijri);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryLight],
+    return MihrabCard(
+      background: AppColors.paper,
+      borderColor: AppColors.matteGold,
+      borderWidth: 1.2,
+      archHeight: 18,
+      bottomRadius: 22,
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
+      shadows: const [
+        BoxShadow(
+          color: Color(0x14C5A059),
+          blurRadius: 24,
+          offset: Offset(0, 8),
         ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      ],
+      child: Stack(
         children: [
-          _DateHeader(hijri: hijri, city: city),
-          const SizedBox(height: 16),
-          child,
-          if (event != null) ...[
-            const SizedBox(height: 16),
-            _EventAlert(eventName: event),
-          ],
+          // Arka plan filigranı — subtle Islamic geometric pattern
+          Positioned.fill(
+            child: ClipRect(
+              child: GeometricWatermark(
+                color: AppColors.matteGold,
+                opacity: 0.045,
+                cellSize: 58,
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DateHeader(hijri: hijri, city: city),
+              const SizedBox(height: 18),
+              child,
+              if (event != null) ...[
+                const SizedBox(height: 16),
+                _EventAlert(eventName: event),
+              ],
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-// ── Tarih başlığı ────────────────────────────────────────────────────────────
+// ── Tarih başlığı (Gregoryen + Hicri + Şehir) ────────────────────────────────
 
 class _DateHeader extends StatelessWidget {
   final HijriDate hijri;
@@ -110,35 +121,31 @@ class _DateHeader extends StatelessWidget {
     final gregorian = DateFormat('d MMMM y', 'tr_TR').format(now);
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.18),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.brightness_2_outlined,
-              color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                dayName,
+                dayName.toUpperCase(),
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.white70,
-                  letterSpacing: 0.4,
+                  color: AppColors.matteGoldDark,
+                  letterSpacing: 1.6,
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                gregorian,
+                style: AppTextStyles.headlineMedium,
               ),
               const SizedBox(height: 2),
               Text(
-                '$gregorian / ${hijri.formatTr()}',
-                style: AppTextStyles.titleMedium.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                hijri.formatTr(),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.matteGoldDark,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ],
@@ -146,22 +153,25 @@ class _DateHeader extends StatelessWidget {
         ),
         if (city != null)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.16),
+              color: AppColors.cream,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.matteGold, width: 0.8),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.location_on_outlined,
-                    size: 12, color: Colors.white70),
+                    size: 13, color: AppColors.imperial),
                 const SizedBox(width: 4),
                 Text(
                   city!,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                    color: AppColors.imperial,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ],
@@ -182,34 +192,35 @@ class _LoadingView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ShimmerBox(
-          height: 56,
-          borderRadius: 16,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Vakit bilgileri yükleniyor...',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.white70,
-                    ),
-                  ),
+        Container(
+          height: 96,
+          decoration: BoxDecoration(
+            color: AppColors.cream,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.matteGold, width: 0.8),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.matteGold,
                 ),
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Vakit bilgileri yükleniyor…',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.imperial),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         LayoutBuilder(
           builder: (ctx, c) {
             final w = (c.maxWidth - 16) / 3;
@@ -220,7 +231,7 @@ class _LoadingView extends StatelessWidget {
                 6,
                 (_) => SizedBox(
                   width: w,
-                  child: const _ShimmerBox(height: 64, borderRadius: 14),
+                  child: const _ShimmerTile(),
                 ),
               ),
             );
@@ -231,25 +242,18 @@ class _LoadingView extends StatelessWidget {
   }
 }
 
-class _ShimmerBox extends StatefulWidget {
-  final double height;
-  final double borderRadius;
-  final Widget? child;
-  const _ShimmerBox({
-    required this.height,
-    required this.borderRadius,
-    this.child,
-  });
+class _ShimmerTile extends StatefulWidget {
+  const _ShimmerTile();
 
   @override
-  State<_ShimmerBox> createState() => _ShimmerBoxState();
+  State<_ShimmerTile> createState() => _ShimmerTileState();
 }
 
-class _ShimmerBoxState extends State<_ShimmerBox>
+class _ShimmerTileState extends State<_ShimmerTile>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1200),
+    duration: const Duration(milliseconds: 1400),
   )..repeat();
 
   @override
@@ -262,28 +266,25 @@ class _ShimmerBoxState extends State<_ShimmerBox>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, child) {
+      builder: (_, __) {
         final t = _ctrl.value;
         return Container(
-          height: widget.height,
+          height: 62,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.divider, width: 0.8),
             gradient: LinearGradient(
               begin: Alignment(-1 + 2 * t, 0),
               end: Alignment(1 + 2 * t, 0),
-              colors: [
-                Colors.white.withOpacity(0.05),
-                Colors.white.withOpacity(0.18),
-                Colors.white.withOpacity(0.05),
+              colors: const [
+                AppColors.cream,
+                Color(0xFFFAF5E5),
+                AppColors.cream,
               ],
             ),
           ),
-          child: child,
         );
       },
-      child: widget.child == null
-          ? null
-          : Align(alignment: Alignment.centerLeft, child: widget.child),
     );
   }
 }
@@ -299,14 +300,15 @@ class _OfflinePrompt extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        color: AppColors.cream,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.matteGold, width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.wifi_off_rounded, color: Colors.white70, size: 22),
+          const Icon(Icons.wifi_off_rounded,
+              color: AppColors.matteGoldDark, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -314,22 +316,17 @@ class _OfflinePrompt extends StatelessWidget {
               children: [
                 Text(
                   'İlk açılışta vakitleri indirmek için bağlantı gerekli',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppTextStyles.titleMedium
+                      .copyWith(color: AppColors.imperial),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Lütfen internet bağlantınızı kontrol edip tekrar deneyin.',
-                  style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
+                  style: AppTextStyles.bodySmall,
                 ),
                 const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.primary,
-                    elevation: 0,
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 8),
                   ),
@@ -346,7 +343,7 @@ class _OfflinePrompt extends StatelessWidget {
   }
 }
 
-// ── Yüklü görünüm: geri sayım + 6 kart ───────────────────────────────────────
+// ── Yüklü: geri sayım + 6 vakit Iznik kartı ──────────────────────────────────
 
 class _LoadedView extends StatefulWidget {
   final PrayerTimeLoaded state;
@@ -381,7 +378,8 @@ class _LoadedViewState extends State<_LoadedView> {
   }
 
   void _rebuildTimes() {
-    _times = widget.state.today.toDailyPrayerTimes(nextDay: widget.state.nextDay);
+    _times = widget.state.today
+        .toDailyPrayerTimes(nextDay: widget.state.nextDay);
   }
 
   void _recompute() {
@@ -393,7 +391,6 @@ class _LoadedViewState extends State<_LoadedView> {
       _remaining = diff.isNegative ? Duration.zero : diff;
       _currentVakitKey = _times.currentVakitKey(now);
     });
-    // Gece yarısı geçtiyse bugünün kaydı geçersiz; cubit'ten yeniden iste.
     final today = widget.state.today.date;
     if (now.year != today.year ||
         now.month != today.month ||
@@ -413,8 +410,11 @@ class _LoadedViewState extends State<_LoadedView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Countdown(remaining: _remaining, vakitKey: _currentVakitKey),
-        const SizedBox(height: 18),
+        _CountdownCard(
+          remaining: _remaining,
+          vakitKey: _currentVakitKey,
+        ),
+        const SizedBox(height: 14),
         _PrayerGrid(
           today: widget.state.today,
           currentVakitKey: _currentVakitKey,
@@ -425,12 +425,12 @@ class _LoadedViewState extends State<_LoadedView> {
   }
 }
 
-// ── Geri sayım ───────────────────────────────────────────────────────────────
+// ── Geri sayım — flagship kart (altın kenar + watermark + tezhip köşeler) ────
 
-class _Countdown extends StatelessWidget {
+class _CountdownCard extends StatelessWidget {
   final Duration remaining;
   final String vakitKey;
-  const _Countdown({required this.remaining, required this.vakitKey});
+  const _CountdownCard({required this.remaining, required this.vakitKey});
 
   static const Map<String, String> _vakitLabels = {
     'fajr': 'Sabah',
@@ -449,44 +449,89 @@ class _Countdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = _vakitLabels[vakitKey] ?? '';
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.16)),
+        border: Border.all(color: AppColors.matteGold, width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x10C5A059),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Vaktin Çıkmasına Kalan Süre',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Colors.white70,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$label vakti',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.secondaryLight,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+          // İnce filigran arka plan
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: GeometricWatermark(
+                color: AppColors.imperial,
+                opacity: 0.035,
+                cellSize: 44,
+              ),
             ),
           ),
-          Text(
-            _fmt(remaining),
-            style: AppTextStyles.displayMedium.copyWith(
-              color: Colors.white,
-              fontFeatures: const [FontFeature.tabularFigures()],
-              fontSize: 28,
-              letterSpacing: 1.5,
+          // Tezhip köşeler
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: TezhipCornersPainter(
+                  color: AppColors.matteGold,
+                  cornerSize: 14,
+                  strokeWidth: 1.1,
+                  inset: 6,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'VAKTİN ÇIKMASINA KALAN SÜRE',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.matteGoldDark,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _fmt(remaining),
+                  style: AppTextStyles.countdown,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 18,
+                      height: 1,
+                      color: AppColors.matteGold,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$label Vakti',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.imperial,
+                        letterSpacing: 1.2,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 18,
+                      height: 1,
+                      color: AppColors.matteGold,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -495,7 +540,7 @@ class _Countdown extends StatelessWidget {
   }
 }
 
-// ── Vakit kartları (3x2) ─────────────────────────────────────────────────────
+// ── 6 vakit Iznik-tarzı kart grid ────────────────────────────────────────────
 
 class _PrayerGrid extends StatelessWidget {
   final PrayerTimeModel today;
@@ -511,18 +556,12 @@ class _PrayerGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = <_VakitItem>[
-      _VakitItem('İmsak', today.imsak,
-          vakitKey: 'fajr', icon: Icons.nights_stay_outlined),
-      _VakitItem('Güneş', today.gunes,
-          vakitKey: null, icon: Icons.wb_twilight),
-      _VakitItem('Öğle', today.dhuhr,
-          vakitKey: 'dhuhr', icon: Icons.wb_sunny_outlined),
-      _VakitItem('İkindi', today.asr,
-          vakitKey: 'asr', icon: Icons.wb_cloudy_outlined),
-      _VakitItem('Akşam', today.maghrib,
-          vakitKey: 'maghrib', icon: Icons.brightness_4_outlined),
-      _VakitItem('Yatsı', today.isha,
-          vakitKey: 'isha', icon: Icons.bedtime_outlined),
+      _VakitItem('İmsak', today.imsak, vakitKey: 'fajr'),
+      _VakitItem('Güneş', today.gunes, vakitKey: null),
+      _VakitItem('Öğle', today.dhuhr, vakitKey: 'dhuhr'),
+      _VakitItem('İkindi', today.asr, vakitKey: 'asr'),
+      _VakitItem('Akşam', today.maghrib, vakitKey: 'maghrib'),
+      _VakitItem('Yatsı', today.isha, vakitKey: 'isha'),
     ];
 
     return LayoutBuilder(
@@ -538,7 +577,7 @@ class _PrayerGrid extends StatelessWidget {
                 (completedToday[it.vakitKey] ?? 0) > 0;
             return SizedBox(
               width: w,
-              child: _PrayerCard(
+              child: _IznikTile(
                 item: it,
                 isActive: isActive,
                 isCompleted: isCompleted,
@@ -555,21 +594,15 @@ class _VakitItem {
   final String label;
   final String time; // HH:mm
   final String? vakitKey;
-  final IconData icon;
-  const _VakitItem(
-    this.label,
-    this.time, {
-    required this.vakitKey,
-    required this.icon,
-  });
+  const _VakitItem(this.label, this.time, {required this.vakitKey});
 }
 
-class _PrayerCard extends StatelessWidget {
+class _IznikTile extends StatelessWidget {
   final _VakitItem item;
   final bool isActive;
   final bool isCompleted;
 
-  const _PrayerCard({
+  const _IznikTile({
     required this.item,
     required this.isActive,
     required this.isCompleted,
@@ -577,55 +610,73 @@ class _PrayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isActive ? AppColors.secondary : Colors.white;
+    // Tamamlanmış → emerald zemin + krem yazı + altın tik
+    // Aktif → krem zemin + altın kenarlık (çift kontur hissi)
+    // Pasif → krem zemin + ince divider kenarlık
+    final Color bg;
+    final Color textColor;
+    final Color borderColor;
+    final double borderWidth;
+
+    if (isCompleted) {
+      bg = AppColors.imperial;
+      textColor = AppColors.paper;
+      borderColor = AppColors.matteGold;
+      borderWidth = 1.2;
+    } else if (isActive) {
+      bg = AppColors.cream;
+      textColor = AppColors.imperial;
+      borderColor = AppColors.matteGold;
+      borderWidth = 1.4;
+    } else {
+      bg = AppColors.paper;
+      textColor = AppColors.imperial;
+      borderColor = AppColors.divider;
+      borderWidth = 0.9;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: isActive
-            ? Colors.white.withOpacity(0.20)
-            : Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isCompleted
-              ? AppColors.secondary
-              : (isActive
-                  ? AppColors.secondaryLight
-                  : Colors.white.withOpacity(0.18)),
-          width: isCompleted || isActive ? 1.6 : 1,
-        ),
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: borderWidth),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(item.icon, size: 14, color: accent),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  item.label,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                item.label.toUpperCase(),
+                style: AppTextStyles.prayerLabel.copyWith(
+                  color: isCompleted
+                      ? AppColors.matteGoldLight
+                      : AppColors.matteGoldDark,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.time,
+                style: AppTextStyles.timeNumeric.copyWith(
+                  color: textColor,
+                  fontSize: 17,
                 ),
               ),
-              if (isCompleted)
-                const Icon(Icons.check_circle,
-                    size: 14, color: AppColors.secondary),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            item.time,
-            style: AppTextStyles.titleMedium.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          if (isCompleted)
+            const Positioned(
+              top: -2,
+              right: -2,
+              child: Icon(
+                Icons.check_circle,
+                size: 16,
+                color: AppColors.matteGold,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -644,24 +695,36 @@ class _EventAlert extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withOpacity(0.18),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.secondary.withOpacity(0.55)),
+        color: AppColors.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.matteGold, width: 0.9),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.star_rounded,
-              color: AppColors.secondaryLight, size: 22),
+          const Icon(Icons.auto_awesome,
+              color: AppColors.matteGoldDark, size: 18),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              'Bugün $eventName. Kaza borçlarınızı eritmek ve nafile '
-              'ibadetlerinizi artırmak için çok bereketli bir gün!',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Colors.white,
-                height: 1.45,
-                fontWeight: FontWeight.w500,
+            child: RichText(
+              text: TextSpan(
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.imperialDark,
+                  height: 1.45,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Bugün $eventName. ',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.imperial,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const TextSpan(
+                    text:
+                        'Kaza borçlarınızı eritmek ve nafile ibadetlerinizi artırmak için çok bereketli bir gün!',
+                  ),
+                ],
               ),
             ),
           ),
