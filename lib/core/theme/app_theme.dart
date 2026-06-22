@@ -32,15 +32,20 @@ class AppTheme {
           onError: Colors.white,
         ),
         scaffoldBackgroundColor: AppColors.paper,
+        // İvory zeminle birleşen AppBar — ayrık koyu blok yok, sadece serif başlık.
         appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.imperial,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.paper,
+          foregroundColor: AppColors.imperial,
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
           elevation: 0,
+          scrolledUnderElevation: 0,
           centerTitle: true,
+          iconTheme: const IconThemeData(color: AppColors.imperial),
           titleTextStyle: AppTextStyles.headlineMedium.copyWith(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+            color: AppColors.imperial,
+            fontSize: 22,
+            letterSpacing: 0.2,
           ),
         ),
         cardTheme: CardThemeData(

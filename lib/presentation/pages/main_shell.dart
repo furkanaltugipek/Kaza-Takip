@@ -11,16 +11,7 @@ import 'package:kaza_takip/presentation/pages/ibadet/ibadet_center_page.dart';
 import 'package:kaza_takip/presentation/pages/qibla/qibla_page.dart';
 import 'package:kaza_takip/presentation/pages/settings/settings_page.dart';
 import 'package:kaza_takip/presentation/pages/spiritual/spiritual_lessons_page.dart';
-
-/// Uygulama bölümleri — sıra menü sırasıyla birebir eşleşmeli.
-enum _Section {
-  dashboard,
-  calendar,
-  ibadet,
-  qibla,
-  spiritual,
-  settings,
-}
+import 'package:kaza_takip/presentation/widgets/custom_app_drawer.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -30,34 +21,16 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
-  _Section _section = _Section.dashboard;
-
-  static const _titles = {
-    _Section.dashboard: 'Ana Sayfa',
-    _Section.calendar: 'Takvim & Analiz',
-    _Section.ibadet: 'İbadet Merkezi',
-    _Section.qibla: 'Kıble Pusulası',
-    _Section.spiritual: 'Manevi Dersler',
-    _Section.settings: 'Ayarlar',
-  };
-
-  static const _icons = {
-    _Section.dashboard: Icons.home_outlined,
-    _Section.calendar: Icons.grid_view_outlined,
-    _Section.ibadet: Icons.mosque_outlined,
-    _Section.qibla: Icons.explore_outlined,
-    _Section.spiritual: Icons.auto_stories_outlined,
-    _Section.settings: Icons.settings_outlined,
-  };
+  AppSection _section = AppSection.dashboard;
 
   Widget get _body {
     return switch (_section) {
-      _Section.dashboard => const DashboardV2Page(),
-      _Section.calendar => const CalendarPage(),
-      _Section.ibadet => const IbadetCenterPage(),
-      _Section.qibla => const QiblaPage(),
-      _Section.spiritual => const SpiritualLessonsPage(),
-      _Section.settings => const SettingsPage(),
+      AppSection.dashboard => const DashboardV2Page(),
+      AppSection.calendar => const CalendarPage(),
+      AppSection.ibadet => const IbadetCenterPage(),
+      AppSection.qibla => const QiblaPage(),
+      AppSection.spiritual => const SpiritualLessonsPage(),
+      AppSection.settings => const SettingsPage(),
     };
   }
 
@@ -85,65 +58,59 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     }
   }
 
+  void _onSectionSelected(AppSection s) {
+    setState(() => _section = s);
+    Navigator.of(context).pop(); // drawer'ı kapat
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.paper,
+      drawer: CustomAppDrawer(
+        current: _section,
+        onSelect: _onSectionSelected,
+      ),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.paper,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
-        leading: PopupMenuButton<_Section>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-          tooltip: 'Menü',
-          offset: const Offset(0, 48),
-          color: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            tooltip: 'Menü',
+            splashRadius: 22,
+            icon: const RefinedMenuIcon(
+              color: AppColors.imperial,
+              size: 24,
+            ),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
-          onSelected: (s) => setState(() => _section = s),
-          itemBuilder: (_) => _Section.values.map((s) {
-            final selected = s == _section;
-            return PopupMenuItem<_Section>(
-              value: s,
-              child: Row(
-                children: [
-                  Icon(
-                    _icons[s],
-                    size: 20,
-                    color:
-                        selected ? AppColors.primary : const Color(0xFF555555),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _titles[s]!,
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: selected ? AppColors.primary : null,
-                      fontWeight:
-                          selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  if (selected) ...[
-                    const Spacer(),
-                    const Icon(Icons.check,
-                        size: 16, color: AppColors.primary),
-                  ],
-                ],
-              ),
-            );
-          }).toList(),
         ),
         title: Text(
-          _titles[_section]!,
-          style: AppTextStyles.titleLarge.copyWith(color: Colors.white),
+          _section.title,
+          style: AppTextStyles.headlineMedium.copyWith(
+            color: AppColors.imperial,
+            fontSize: 22,
+            letterSpacing: 0.2,
+          ),
         ),
+        centerTitle: true,
       ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
+        duration: const Duration(milliseconds: 280),
+        switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, anim) =>
-            FadeTransition(opacity: anim, child: child),
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.02),
+              end: Offset.zero,
+            ).animate(anim),
+            child: child,
+          ),
+        ),
         child: KeyedSubtree(
           key: ValueKey(_section),
           child: _body,
