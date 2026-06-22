@@ -7,9 +7,6 @@ import 'package:kaza_takip/core/utils/date_utils.dart';
 import 'package:kaza_takip/domain/entities/kaza_metrics.dart';
 import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
 import 'package:kaza_takip/presentation/pages/wizard/wizard_page.dart';
-import 'package:kaza_takip/presentation/widgets/common/kaza_progress_bar.dart';
-import 'package:kaza_takip/presentation/widgets/common/streak_card.dart';
-import 'package:kaza_takip/presentation/widgets/daily_inspiration_card.dart';
 import 'package:kaza_takip/presentation/widgets/daily_prayer_tile.dart';
 import 'package:kaza_takip/presentation/widgets/prayer_times_top_bar.dart';
 
@@ -195,7 +192,7 @@ class _LoadedDashboardState extends State<_LoadedDashboard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Namaz vakitleri + Hicri tarih + canlı geri sayım + dini gün uyarısı
+              // 1) Namaz vakitleri + Hicri tarih + canlı geri sayım + dini gün uyarısı
               PrayerTimesTopBar(
                 completedToday: {
                   for (final k in PrayerConstants.prayerKeys)
@@ -204,31 +201,20 @@ class _LoadedDashboardState extends State<_LoadedDashboard>
               ),
               const SizedBox(height: 16),
 
-              // Kaza ilerleme özeti
-              _ProgressInline(
+              // 2) Kompakt istatistikler — Tamamlanma % + İstikrar yan yana
+              _CompactStatsRow(
                 completionRatio: metrics.completionPercentage,
                 remainingCount: metrics.totalRemaining,
-                remainingRakats: metrics.totalRakatsRemaining,
-              ),
-              const SizedBox(height: 16),
-
-              // İstikrar Ateşi
-              StreakCard(
                 currentStreak: metrics.currentStreak,
                 longestStreak: metrics.longestStreak,
-                totalCompleted: metrics.totalCompletedCount,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
-              // Günün İlhamı — Ayet / Hadis / Mevlana / Risale-i Nur
-              const DailyInspirationCard(),
-              const SizedBox(height: 24),
-
-              // Mod seçici
+              // 3) Zorluk seviyesi seçici
               _ModeSelector(currentMode: s.planMode),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-              // Bugünün planı başlığı
+              // 4) "Bugünkü Planın" başlığı
               Row(
                 children: [
                   Text(
@@ -275,32 +261,148 @@ class _LoadedDashboardState extends State<_LoadedDashboard>
   }
 }
 
-// ── Kompakt ilerleme satırı ──────────────────────────────────────────────────
+// ── Kompakt istatistik satırı — Tamamlanma % + İstikrar yan yana ────────────
 
-class _ProgressInline extends StatelessWidget {
+class _CompactStatsRow extends StatelessWidget {
   final double completionRatio;
   final int remainingCount;
-  final int remainingRakats;
-  const _ProgressInline({
+  final int currentStreak;
+  final int longestStreak;
+
+  const _CompactStatsRow({
     required this.completionRatio,
     required this.remainingCount,
-    required this.remainingRakats,
+    required this.currentStreak,
+    required this.longestStreak,
+  });
+
+  static String _format(int n) {
+    final s = n.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write('.');
+      buf.write(s[i]);
+    }
+    return buf.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (completionRatio * 100).toStringAsFixed(1);
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Sol: Tamamlanma yüzdesi + ince ilerleme şeridi ───────────────
+          Expanded(
+            child: _StatTile(
+              label: 'TAMAMLANDI',
+              accent: Icons.task_alt_rounded,
+              value: '%$percent',
+              footer: 'Kalan ${_format(remainingCount)} vakit',
+              progress: completionRatio.clamp(0, 1).toDouble(),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // ── Sağ: İstikrar serisi ─────────────────────────────────────────
+          Expanded(
+            child: _StatTile(
+              label: 'İSTİKRAR',
+              accent: currentStreak > 0
+                  ? Icons.local_fire_department_rounded
+                  : Icons.auto_awesome_rounded,
+              value: '$currentStreak gün',
+              footer: 'En yüksek $longestStreak gün',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String label;
+  final IconData accent;
+  final String value;
+  final String footer;
+
+  /// 0–1 arası; null ise ilerleme şeridi gizlenir.
+  final double? progress;
+
+  const _StatTile({
+    required this.label,
+    required this.accent,
+    required this.value,
+    required this.footer,
+    this.progress,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.divider),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider, width: 0.9),
       ),
-      child: KazaProgressBar(
-        value: completionRatio,
-        remainingCount: remainingCount,
-        remainingRakats: remainingRakats,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(accent, size: 14, color: AppColors.matteGoldDark),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.matteGoldDark,
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: AppTextStyles.displayMedium.copyWith(
+              fontSize: 24,
+              height: 1.05,
+            ),
+          ),
+          if (progress != null) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutCubic,
+                tween: Tween(begin: 0, end: progress),
+                builder: (_, v, __) => LinearProgressIndicator(
+                  value: v,
+                  minHeight: 4,
+                  backgroundColor: AppColors.cream,
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(AppColors.matteGold),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            footer,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.imperial.withOpacity(0.65),
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
