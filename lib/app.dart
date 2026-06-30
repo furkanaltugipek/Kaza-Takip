@@ -5,6 +5,7 @@ import 'package:kaza_takip/core/di/injection_container.dart';
 import 'package:kaza_takip/core/theme/app_theme.dart';
 import 'package:kaza_takip/domain/repositories/user_repository.dart';
 import 'package:kaza_takip/presentation/blocs/kaza/kaza_bloc.dart';
+import 'package:kaza_takip/presentation/blocs/prayer_time/prayer_time_cubit.dart';
 import 'package:kaza_takip/presentation/pages/main_shell.dart';
 
 class KazaTakipApp extends StatefulWidget {
@@ -41,8 +42,15 @@ class _KazaTakipAppState extends State<KazaTakipApp> {
 
         final userId = snap.data!;
 
-        return BlocProvider(
-          create: (_) => sl<KazaBloc>()..add(LoadKazaMetrics(userId)),
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => sl<KazaBloc>()..add(LoadKazaMetrics(userId)),
+            ),
+            BlocProvider(
+              create: (_) => sl<PrayerTimeCubit>()..loadForToday(),
+            ),
+          ],
           child: MaterialApp(
             title: 'Kaza Takip',
             theme: AppTheme.light,

@@ -6,7 +6,7 @@ import 'package:kaza_takip/core/theme/app_text_styles.dart';
 import 'package:kaza_takip/core/utils/prayer_calculator.dart';
 import 'package:kaza_takip/domain/entities/kaza_debt.dart';
 import 'package:kaza_takip/presentation/bloc/kaza_calculator/kaza_calculator_bloc.dart';
-import 'package:kaza_takip/presentation/pages/dashboard/dashboard_page.dart';
+import 'package:kaza_takip/presentation/pages/main_shell.dart';
 
 class KazaResultPage extends StatelessWidget {
   const KazaResultPage({super.key});
@@ -55,8 +55,7 @@ class KazaResultPage extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                      builder: (_) => const DashboardPage()),
+                  MaterialPageRoute(builder: (_) => const MainShell()),
                   (_) => false,
                 ),
                 child: const Text('Günlük Plana Başla'),

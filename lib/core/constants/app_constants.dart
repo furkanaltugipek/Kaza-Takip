@@ -15,14 +15,23 @@ class AppConstants {
   // İbadet modülleri (Oruç / Hatim / Zikir / Sadaka)
   static const String hiveBoxIbadet = 'ibadet_box';
 
+  // Aladhan namaz vakti aylık önbelleği (şehir + ay anahtarlı JSON)
+  static const String hiveBoxPrayerTimes = 'prayer_times_box';
+
   // Bildirim tercihleri (SharedPreferences anahtarları)
   static const String prefNotificationsEnabled = 'notifications_enabled';
+  static const String prefSpiritualNotificationsEnabled =
+      'spiritual_notifications_enabled';
+  static const String prefSpiritualNotificationFrequency =
+      'spiritual_notif_frequency'; // 1 | 2
   static const String prefLatitude = 'pref_latitude';
   static const String prefLongitude = 'pref_longitude';
+  static const String prefSelectedCity = 'pref_selected_city';
 
   // Varsayılan konum: İstanbul (konum izni yoksa kullanılır)
   static const double defaultLatitude = 41.0082;
   static const double defaultLongitude = 28.9784;
+  static const String defaultCity = 'İstanbul';
 
   // Firestore collections
   static const String colUsers = 'users';

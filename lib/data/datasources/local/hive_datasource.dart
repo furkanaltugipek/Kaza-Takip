@@ -21,6 +21,8 @@ class HiveLocalDataSource {
   late Box<dynamic> _streakBox;
   // İbadet modülleri için genel kutu (Oruç/Hatim/Zikir/Sadaka).
   late Box<dynamic> _ibadetBox;
+  // Aladhan'dan çekilen aylık vakit dizileri (JSON string olarak saklanır).
+  late Box<String> _prayerTimesBox;
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -48,6 +50,28 @@ class HiveLocalDataSource {
     _userBox = await Hive.openBox<UserProfileModel>(AppConstants.hiveBoxUser);
     _streakBox = await Hive.openBox(AppConstants.hiveBoxStreak);
     _ibadetBox = await Hive.openBox(AppConstants.hiveBoxIbadet);
+    _prayerTimesBox =
+        await Hive.openBox<String>(AppConstants.hiveBoxPrayerTimes);
+  }
+
+  // ── Namaz vakti aylık önbelleği ─────────────────────────────────────────────
+
+  /// Anahtar formatı: '<cityLowercase>_<yyyy-MM>' → ayın JSON listesi.
+  String? getPrayerTimesRaw(String key) => _prayerTimesBox.get(key);
+
+  Future<void> putPrayerTimesRaw(String key, String jsonString) =>
+      _prayerTimesBox.put(key, jsonString);
+
+  /// Belirli bir şehrin tüm aylarını siler — şehir değişiminde çağrılır.
+  Future<void> clearPrayerTimesForCity(String cityKey) async {
+    final prefix = '${cityKey}_';
+    final keysToDelete = _prayerTimesBox.keys
+        .whereType<String>()
+        .where((k) => k.startsWith(prefix))
+        .toList();
+    if (keysToDelete.isNotEmpty) {
+      await _prayerTimesBox.deleteAll(keysToDelete);
+    }
   }
 
   // ── İbadet modülleri (genel anahtar/değer deposu) ───────────────────────────
