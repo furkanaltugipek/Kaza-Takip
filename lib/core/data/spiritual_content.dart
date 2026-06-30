@@ -21,6 +21,7 @@ enum SpiritualCategory {
   ayet('Ayet', 'Kur\'an-ı Kerim'),
   hadis('Hadis', 'Hadis-i Şerifler'),
   mevlana('Mevlana', 'Mesnevi & Divan-ı Kebir'),
+  gazali('İmam Gazali', 'İhya & Kimya-yı Saadet'),
   risale('Risale-i Nur', 'Bediüzzaman Said Nursi');
 
   final String title;
@@ -344,12 +345,93 @@ class SpiritualContent {
     ),
   ];
 
+  /// İmam Gazali'nin İhya'u Ulûmi'd-Dîn, Kimya-yı Saâdet ve diğer eserlerinden
+  /// derlenmiş kısa hikmet/öğüt seçkisi.
+  static const List<SpiritualPiece> gazali = [
+    SpiritualPiece(
+      text:
+          'Nefsini bilen Rabbini bilir. Kalp, parlatıldıkça hakikati yansıtan bir aynadır.',
+      source: 'İhya\'u Ulûmi\'d-Dîn',
+    ),
+    SpiritualPiece(
+      text:
+          'İlim, amel ile birleştiğinde fayda verir; amelsiz ilim, yağmursuz bulut gibidir.',
+      source: 'İhya\'u Ulûmi\'d-Dîn, İlim Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Sabrın başlangıcı acıdır, sonu ise baldan tatlıdır. Acele eden, en kıymetli meyveden mahrum kalır.',
+      source: 'İhya, Sabır ve Şükür Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Allah\'a giden yollar, mahlûkatın nefesleri sayısıncadır. Sen kendi yolunda samimi ol.',
+      source: 'Mişkâtü\'l-Envâr',
+    ),
+    SpiritualPiece(
+      text:
+          'İhlas, amelin ruhudur. Riyâ ile süslenmiş bir amel, ölü bir bedene benzer.',
+      source: 'İhya, İhlas ve Niyet Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Az ile yetinen çok kazanmıştır; çoğu isteyen hep azı bulmuştur. Kanaat, tükenmez bir hazinedir.',
+      source: 'Kimya-yı Saâdet',
+    ),
+    SpiritualPiece(
+      text:
+          'Bir günahı küçük görmek, asıl tehlikedir. Çünkü dağ, küçük taşlardan meydana gelir.',
+      source: 'İhya, Tövbe Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Tövbe kapısı son nefese kadar açıktır. Hiç kimse Rabbinin rahmetinden ümidini kesmemelidir.',
+      source: 'İhya, Tövbe Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Şükür, nimetin devamının anahtarıdır. Verilenin kıymetini bilmeyen, o nimete lâyık değildir.',
+      source: 'İhya, Sabır ve Şükür Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Dilini koru; çünkü insan dili yüzünden cehenneme yüz üstü atılır.',
+      source: 'İhya, Dilin Âfetleri',
+    ),
+    SpiritualPiece(
+      text:
+          'Mü\'minin kalbi Arş\'tan daha geniştir; orada Allah\'ın muhabbeti yer bulur.',
+      source: 'Mişkâtü\'l-Envâr',
+    ),
+    SpiritualPiece(
+      text:
+          'Dünya bir köprüdür; geç ama üzerine ev yapma. Asıl yurt ahirettir.',
+      source: 'Eyyühe\'l-Veled',
+    ),
+    SpiritualPiece(
+      text:
+          'En değerli yolculuk, kalbin Allah\'a doğru olan yolculuğudur. Bedenin yorulmadığı yol, ruhun en uzun yoludur.',
+      source: 'Kimya-yı Saâdet',
+    ),
+    SpiritualPiece(
+      text:
+          'Tevekkül, sebeplere yapışmayı bırakmak değil; sebeplerin arkasındaki Müsebbib\'e güvenmektir.',
+      source: 'İhya, Tevekkül Kitabı',
+    ),
+    SpiritualPiece(
+      text:
+          'Korku ile ümit arasında yaşa: kuş gibi iki kanatla uçulur, tek kanatla değil.',
+      source: 'İhya, Havf ve Recâ',
+    ),
+  ];
+
   /// Kategorinin tüm parçaları.
   static List<SpiritualPiece> forCategory(SpiritualCategory c) {
     return switch (c) {
       SpiritualCategory.ayet => ayetler,
       SpiritualCategory.hadis => hadisler,
       SpiritualCategory.mevlana => mevlana,
+      SpiritualCategory.gazali => gazali,
       SpiritualCategory.risale => risale,
     };
   }

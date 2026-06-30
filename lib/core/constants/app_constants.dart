@@ -20,6 +20,10 @@ class AppConstants {
 
   // Bildirim tercihleri (SharedPreferences anahtarları)
   static const String prefNotificationsEnabled = 'notifications_enabled';
+  static const String prefSpiritualNotificationsEnabled =
+      'spiritual_notifications_enabled';
+  static const String prefSpiritualNotificationFrequency =
+      'spiritual_notif_frequency'; // 1 | 2
   static const String prefLatitude = 'pref_latitude';
   static const String prefLongitude = 'pref_longitude';
   static const String prefSelectedCity = 'pref_selected_city';

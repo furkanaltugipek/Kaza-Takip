@@ -26,6 +26,7 @@ class DailySeed {
       SpiritualCategory.ayet => 0,
       SpiritualCategory.hadis => 3,
       SpiritualCategory.mevlana => 7,
+      SpiritualCategory.gazali => 5,
       SpiritualCategory.risale => 11,
     };
     return list[(day + offset) % list.length];
@@ -36,5 +37,19 @@ class DailySeed {
     return {
       for (final c in SpiritualCategory.values) c: pieceOf(c, now),
     };
+  }
+
+  /// O gün sabah ve akşam bildirimleri için iki farklı kategoriden parça döner.
+  /// Yerel-deterministik "akıllı" seçici — aynı gün aynı içerik, gün değişince
+  /// rotasyon ilerler. AI gerektirmez, free-tier güvenli.
+  static (SpiritualCategory cat, SpiritualPiece piece) pickFor({
+    required DateTime day,
+    required bool morning,
+  }) {
+    final categories = SpiritualCategory.values;
+    final dy = dayOfYear(day);
+    final slot = morning ? 0 : 2; // sabah ve akşam farklı kategoriye düşsün
+    final cat = categories[(dy + slot) % categories.length];
+    return (cat, pieceOf(cat, day));
   }
 }

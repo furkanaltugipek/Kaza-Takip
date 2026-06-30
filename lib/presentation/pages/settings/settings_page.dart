@@ -25,6 +25,7 @@ class SettingsPage extends StatelessWidget {
             children: [
               const _CityTile(),
               const _NotificationTile(),
+              const _SpiritualNotificationTile(),
               _SettingsTile(
                 icon: Icons.calculate_outlined,
                 title: 'Kaza Borcunu Yeniden Hesapla',
@@ -233,6 +234,123 @@ class _NotificationTileState extends State<_NotificationTile> {
         ),
         value: _enabled,
         onChanged: _busy ? null : _toggle,
+      ),
+    );
+  }
+}
+
+/// Manevi (AI-destekli) günlük mesajlar için aç/kapa + 1/2 frekans seçici.
+class _SpiritualNotificationTile extends StatefulWidget {
+  const _SpiritualNotificationTile();
+
+  @override
+  State<_SpiritualNotificationTile> createState() =>
+      _SpiritualNotificationTileState();
+}
+
+class _SpiritualNotificationTileState
+    extends State<_SpiritualNotificationTile> {
+  final NotificationService _svc = sl<NotificationService>();
+  late bool _enabled = _svc.isSpiritualEnabled;
+  late int _freq = _svc.spiritualFrequency;
+  bool _busy = false;
+
+  Future<void> _toggle(bool value) async {
+    setState(() => _busy = true);
+    if (value) {
+      final ok = await _svc.enableSpiritual();
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Bildirim izni verilmedi. Cihaz ayarlarından etkinleştirebilirsiniz.'),
+          ),
+        );
+      }
+      setState(() => _enabled = _svc.isSpiritualEnabled);
+    } else {
+      await _svc.disableSpiritual();
+      setState(() => _enabled = false);
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _setFreq(int value) async {
+    await _svc.setSpiritualFrequency(value);
+    setState(() => _freq = value);
+    if (_enabled) await _svc.rescheduleSpiritual();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            secondary: const Icon(Icons.auto_awesome,
+                color: AppColors.matteGoldDark),
+            activeColor: AppColors.imperial,
+            title: Text('Manevi Bildirimler',
+                style: AppTextStyles.titleMedium),
+            subtitle: Text(
+              _busy
+                  ? 'Ayarlanıyor...'
+                  : (_enabled
+                      ? 'Ayet, hadis, Mevlana, Gazali, Risale-i Nur\'dan '
+                          '${_freq == 2 ? "günde 2" : "günde 1"} mesaj'
+                      : 'Kapalı — açınca akıllı seçimle gün sana mesaj yollar'),
+              style: AppTextStyles.bodySmall,
+            ),
+            value: _enabled,
+            onChanged: _busy ? null : _toggle,
+          ),
+          if (_enabled)
+            Padding(
+              padding:
+                  const EdgeInsets.fromLTRB(20, 0, 20, 14),
+              child: Row(
+                children: [
+                  Text('Sıklık',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.matteGoldDark,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                      )),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SegmentedButton<int>(
+                      style: ButtonStyle(
+                        side: WidgetStateProperty.all(const BorderSide(
+                            color: AppColors.matteGold, width: 0.8)),
+                        backgroundColor:
+                            WidgetStateProperty.resolveWith((s) =>
+                                s.contains(WidgetState.selected)
+                                    ? AppColors.imperial
+                                    : AppColors.paper),
+                        foregroundColor:
+                            WidgetStateProperty.resolveWith((s) =>
+                                s.contains(WidgetState.selected)
+                                    ? Colors.white
+                                    : AppColors.imperial),
+                      ),
+                      segments: const [
+                        ButtonSegment(value: 1, label: Text('Günde 1')),
+                        ButtonSegment(value: 2, label: Text('Günde 2')),
+                      ],
+                      selected: {_freq},
+                      onSelectionChanged: (s) => _setFreq(s.first),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

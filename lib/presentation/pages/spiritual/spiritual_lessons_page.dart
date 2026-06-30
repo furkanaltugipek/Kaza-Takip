@@ -19,6 +19,7 @@ class SpiritualLessonsPage extends StatelessWidget {
     SpiritualCategory.ayet: (emoji: '✨', title: 'Günün Ayeti'),
     SpiritualCategory.hadis: (emoji: '📜', title: 'Hadis-i Şerif'),
     SpiritualCategory.mevlana: (emoji: '🌹', title: 'Hz. Mevlana\'dan'),
+    SpiritualCategory.gazali: (emoji: '📿', title: 'İmam Gazali\'den'),
     SpiritualCategory.risale: (emoji: '💡', title: 'Risale-i Nur\'dan'),
   };
 
